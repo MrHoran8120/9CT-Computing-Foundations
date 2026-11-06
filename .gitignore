@@ -1,0 +1,26 @@
+# This repository is public. Nothing below may ever be committed.
+
+# Handover documents and the school's AI policy snapshot
+private/
+
+# Real rosters and other student data
+*roster*.csv
+*roster*.xlsx
+!dev/sample-roster.csv
+
+# Google Apps Script tooling: holds the script ID and sign-in tokens
+.clasp.json
+.clasprc.json
+creds.json
+
+# Local secrets
+.env
+.env.*
+
+# Generated files and dependencies
+dev/preview.html
+node_modules/
+
+# Operating system files
+.DS_Store
+Thumbs.db

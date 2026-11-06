@@ -1,0 +1,218 @@
+<script>
+  (function () {
+    var state = { student: null, course: [], progress: {}, lesson: 0, section: 0, saving: {} };
+    var app = document.getElementById('app');
+
+    /* Builds an element. Text always goes in as text, never as HTML. */
+    function el(tag, attrs, children) {
+      var node = document.createElement(tag);
+      Object.keys(attrs || {}).forEach(function (key) {
+        if (key === 'text') node.textContent = attrs[key];
+        else if (key === 'onclick') node.addEventListener('click', attrs[key]);
+        else if (key === 'onchange') node.addEventListener('change', attrs[key]);
+        else if (key === 'class') node.className = attrs[key];
+        else if (key === 'checked' || key === 'disabled') node[key] = attrs[key];
+        else node.setAttribute(key, attrs[key]);
+      });
+      (children || []).forEach(function (child) { if (child) node.appendChild(child); });
+      return node;
+    }
+
+    function call(name, args, onDone, onFail) {
+      google.script.run
+        .withSuccessHandler(onDone)
+        .withFailureHandler(onFail)[name].apply(null, args);
+    }
+
+    function showMessage(title, lines) {
+      app.replaceChildren(el('div', { class: 'message' }, [el('h1', { text: title })].concat(
+        lines.map(function (line) { return el('p', { text: line }); })
+      )));
+    }
+
+    function start() {
+      call('getBootstrap', [], function (data) {
+        if (data.status === 'no_identity') {
+          showMessage('We can\'t tell who you are', [
+            'Make sure you\'re signed in with your school Google account.',
+            'If you\'re signed in to more than one Google account, sign out of the others and reload this page.'
+          ]);
+        } else if (data.status === 'not_on_roster') {
+          showMessage('You\'re not on the class list yet', [
+            'You\'re signed in, but your account isn\'t on the list for this course.',
+            'Please ask your teacher to add you.'
+          ]);
+        } else {
+          state.student = data.student;
+          state.course = data.course;
+          state.progress = data.progress;
+          state.student.os ? renderCourse() : renderOsChoice();
+        }
+      }, function () {
+        showMessage('The course didn\'t load', [
+          'Reload the page. If that doesn\'t work, tell your teacher.'
+        ]);
+      });
+    }
+
+    function renderOsChoice() {
+      var note = el('p', { class: 'status', role: 'status' });
+      function choose(os) {
+        return function () {
+          note.className = 'status busy';
+          note.textContent = 'Saving…';
+          call('setOs', [os], function () {
+            state.student.os = os;
+            renderCourse();
+          }, function () {
+            note.className = 'status bad';
+            note.textContent = 'That didn\'t save. Please try again.';
+          });
+        };
+      }
+      app.replaceChildren(el('div', { class: 'home' }, [
+        el('h1', { text: 'Welcome, ' + state.student.name }),
+        el('p', { text: 'What computer are you using? You get steps that match it, and you can change this at any time.' }),
+        el('div', { class: 'os-choice' }, [
+          el('button', { type: 'button', text: 'Windows laptop', onclick: choose('win') }),
+          el('button', { type: 'button', text: 'MacBook', onclick: choose('mac') })
+        ]),
+        note
+      ]));
+    }
+
+    function lessonTasks(lesson) {
+      var tasks = [];
+      lesson.sections.forEach(function (section) { tasks = tasks.concat(section.tasks); });
+      return tasks;
+    }
+
+    function isSectionDone(section) {
+      return section.tasks.every(function (task) { return state.progress[task.id]; });
+    }
+
+    function renderCourse() {
+      var lesson = state.course[state.lesson];
+      var section = lesson.sections[state.section];
+      var tasks = lessonTasks(lesson);
+      var doneCount = tasks.filter(function (task) { return state.progress[task.id]; }).length;
+      var status = el('p', { class: 'status', role: 'status' });
+
+      var osSwitch = el('div', { class: 'os-switch', role: 'group', 'aria-label': 'Choose your computer' },
+        [['win', 'Windows'], ['mac', 'Mac']].map(function (pair) {
+          return el('button', {
+            type: 'button', text: pair[1],
+            'aria-pressed': state.student.os === pair[0] ? 'true' : 'false',
+            onclick: function () { changeOs(pair[0], status); }
+          });
+        }));
+
+      var lessonTabs = el('nav', { class: 'lesson-tabs', 'aria-label': 'Lessons' },
+        state.course.map(function (item, i) {
+          var attrs = {
+            type: 'button', class: 'lesson-tab ' + item.id, text: (i + 1) + '. ' + item.tab,
+            onclick: function () { state.lesson = i; state.section = 0; renderCourse(); }
+          };
+          if (i === state.lesson) attrs['aria-current'] = 'page';
+          return el('button', attrs);
+        }));
+
+      var sectionList = el('ol', { class: 'section-list' }, lesson.sections.map(function (item, i) {
+        var attrs = {
+          type: 'button', text: item.title, class: isSectionDone(item) ? 'done' : '',
+          onclick: function () { state.section = i; renderCourse(); }
+        };
+        if (i === state.section) attrs['aria-current'] = 'step';
+        return el('li', {}, [el('button', attrs)]);
+      }));
+
+      var taskList = el('div', { class: 'tasks' }, section.tasks.map(function (task) {
+        return el('label', { class: 'task' }, [
+          el('input', {
+            type: 'checkbox', id: task.id,
+            checked: !!state.progress[task.id],
+            disabled: !!state.saving[task.id],
+            onchange: function (event) { saveTask(task, event.target, status, tasks); }
+          }),
+          el('span', { text: task.label })
+        ]);
+      }));
+
+      var isLast = state.section === lesson.sections.length - 1;
+      var next = isLast ? null : el('button', {
+        type: 'button', class: 'btn', text: 'Next: ' + lesson.sections[state.section + 1].title,
+        onclick: function () { state.section += 1; renderCourse(); window.scrollTo(0, 0); }
+      });
+
+      app.replaceChildren(el('div', { class: lesson.id }, [
+        el('header', { class: 'topbar' }, [
+          el('span', { class: 'brand', text: 'Computing Foundations' }),
+          el('span', { class: 'who', text: state.student.name + ', ' + state.student.className }),
+          osSwitch,
+          lessonTabs
+        ]),
+        el('div', { class: 'layout' }, [
+          el('aside', { class: 'side' }, [
+            el('div', {}, [
+              el('strong', { id: 'count', text: doneCount + ' of ' + tasks.length + ' tasks' }),
+              el('div', { class: 'meter' }, [
+                el('div', { id: 'meter', style: 'width:' + Math.round(doneCount / tasks.length * 100) + '%' })
+              ])
+            ]),
+            sectionList
+          ]),
+          el('main', { class: 'main' }, [
+            el('div', { class: 'card' }, [
+              el('span', { class: 'eyebrow', text: 'Section ' + (state.section + 1) + ' of ' + lesson.sections.length }),
+              el('h2', { text: section.title }),
+              el('p', { class: 'placeholder', text: 'The lesson content for this section is still being written.' }),
+              taskList,
+              el('div', { class: 'foot' }, [status, next])
+            ])
+          ])
+        ])
+      ]));
+    }
+
+    function changeOs(os, status) {
+      var previous = state.student.os;
+      if (os === previous) return;
+      status.className = 'status busy';
+      status.textContent = 'Saving…';
+      call('setOs', [os], function () {
+        state.student.os = os;
+        renderCourse();
+      }, function () {
+        state.student.os = previous;
+        status.className = 'status bad';
+        status.textContent = 'Your computer choice didn\'t save. Please try again.';
+      });
+    }
+
+    /* A tick only stays ticked once the server confirms it. A failed save is undone and reported. */
+    function saveTask(task, box, status, tasks) {
+      var wanted = box.checked;
+      state.saving[task.id] = true;
+      box.disabled = true;
+      status.className = 'status busy';
+      status.textContent = 'Saving…';
+      call('setTask', [task.id, wanted], function () {
+        delete state.saving[task.id];
+        if (wanted) state.progress[task.id] = true; else delete state.progress[task.id];
+        box.disabled = false;
+        renderCourse();
+        var fresh = document.querySelector('.status');
+        fresh.className = 'status ok';
+        fresh.textContent = 'Saved';
+      }, function () {
+        delete state.saving[task.id];
+        box.checked = !wanted;
+        box.disabled = false;
+        status.className = 'status bad';
+        status.textContent = 'That didn\'t save, so your tick has been undone. Please try again.';
+      });
+    }
+
+    start();
+  })();
+</script>
