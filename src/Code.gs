@@ -6,24 +6,30 @@
  * Every student-facing function below works out who the student is from the Google
  * session. None of them accept an identity from the browser.
  *
+ * Students join by entering their name and a class code on their first visit. The code
+ * only decides whether they can join and which class they're in. It never identifies them.
+ *
  * The spreadsheet ID lives in Script Properties as SPREADSHEET_ID, not in this
  * public source code, so each teacher's copy uses its own private Sheet.
  */
 
 var SHEETS = {
-  ROSTER: { name: 'Roster', headers: ['Email', 'Name', 'Class'] },
-  STUDENTS: { name: 'Students', headers: ['Email', 'Name', 'Class', 'OS', 'Last active'] },
+  CLASSES: { name: 'Classes', headers: ['Class', 'Code'] },
+  STUDENTS: { name: 'Students', headers: ['Email', 'Name', 'Class', 'OS', 'Last active', 'Blocked'] },
   PROGRESS: { name: 'Progress', headers: ['Email', 'Name', 'Class', 'OS', 'Task ID', 'Done', 'Updated'] }
 };
 var VALID_OS = ['win', 'mac'];
 var LOCK_WAIT_MS = 20000;
+// Letters from any language, with spaces, hyphens, apostrophes and full stops. Starting with a
+// letter also stops a name being treated as a Sheet formula.
+var VALID_NAME = /^[\p{L}\p{M}][\p{L}\p{M} '’.\-]*$/u;
+var MAX_NAME_LENGTH = 60;
 
 function doGet() {
   return HtmlService.createTemplateFromFile('Index')
     .evaluate()
     .setTitle('Computing Foundations')
-    .addMetaTag('viewport', 'width=device-width, initial-scale=1')
-    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+    .addMetaTag('viewport', 'width=device-width, initial-scale=1');
 }
 
 /** Lets Index.html pull in the other HTML files. */
@@ -47,8 +53,13 @@ function setupSheets() {
     if (sheet.getLastRow() === 0) {
       sheet.appendRow(def.headers);
       sheet.setFrozenRows(1);
+    } else {
+      // Adds any column that a newer version of the app needs. Student rows aren't touched.
+      sheet.getRange(1, 1, 1, def.headers.length).setValues([def.headers]);
     }
   });
+
+  buildDashboard_(book);
 
   var blank = book.getSheetByName('Sheet1');
   if (blank && !id) book.deleteSheet(blank);
@@ -61,7 +72,7 @@ function getBootstrap() {
   if (who.status !== 'ok') return { status: who.status };
 
   var book = openBook_();
-  var saved = findStudentRow_(book, who.email);
+  syncDashboard_(book);
   var progress = {};
   var ids = allTaskIds_();
   readRows_(book, SHEETS.PROGRESS).forEach(function (row) {
@@ -73,10 +84,29 @@ function getBootstrap() {
 
   return {
     status: 'ok',
-    student: { name: who.name, className: who.className, os: saved ? saved.os : null },
+    student: { name: who.name, className: who.className, os: who.os },
     course: COURSE,
     progress: progress
   };
+}
+
+/**
+ * Joins the signed-in student to the class matching the code. Someone who has already joined
+ * keeps their record, so a student can't move class or rename themselves by joining again.
+ */
+function registerStudent(name, code) {
+  var email = normaliseEmail_(Session.getActiveUser().getEmail());
+  if (!email) return { status: 'no_identity' };
+  var cleanName = cleanName_(name);
+  if (!cleanName) return { status: 'invalid_name' };
+  return withLock_(function () {
+    var book = openBook_();
+    if (findStudentRow_(book, email)) return { status: 'registered' };
+    var className = classForCode_(book, code);
+    if (!className) return { status: 'wrong_code' };
+    book.getSheetByName(SHEETS.STUDENTS.name).appendRow([email, cleanName, className, '', new Date(), '']);
+    return { status: 'registered' };
+  });
 }
 
 /** Saves the signed-in student's Windows or Mac choice. */
@@ -131,17 +161,14 @@ function setTask(taskId, done) {
 
 /* Helpers. A trailing underscore keeps a function private: browsers can't call it. */
 
-/** Works out who is signed in and checks the roster. Never uses browser input. */
+/** Works out who is signed in and finds their record. Never uses browser input. */
 function identify_() {
   var email = normaliseEmail_(Session.getActiveUser().getEmail());
   if (!email) return { status: 'no_identity' };
-  var rows = readRows_(openBook_(), SHEETS.ROSTER);
-  for (var i = 0; i < rows.length; i++) {
-    if (normaliseEmail_(rows[i][0]) === email) {
-      return { status: 'ok', email: email, name: String(rows[i][1]), className: String(rows[i][2]) };
-    }
-  }
-  return { status: 'not_on_roster' };
+  var saved = findStudentRow_(openBook_(), email);
+  if (!saved) return { status: 'needs_registration' };
+  if (saved.blocked) return { status: 'blocked' };
+  return { status: 'ok', email: email, name: saved.name, className: saved.className, os: saved.os };
 }
 
 function requireStudent_() {
@@ -152,6 +179,33 @@ function requireStudent_() {
 
 function normaliseEmail_(value) {
   return String(value === null || value === undefined ? '' : value).trim().toLowerCase();
+}
+
+function cleanName_(value) {
+  if (typeof value !== 'string') return '';
+  var name = value.trim().replace(/\s+/g, ' ');
+  return name.length <= MAX_NAME_LENGTH && VALID_NAME.test(name) ? name : '';
+}
+
+function normaliseCode_(value) {
+  return String(value === null || value === undefined ? '' : value).replace(/\s+/g, '').toLowerCase();
+}
+
+/** Returns the class matching a code, or an empty string. A blank code never matches. */
+function classForCode_(book, code) {
+  var wanted = normaliseCode_(code);
+  if (!wanted) return '';
+  var rows = readRows_(book, SHEETS.CLASSES);
+  for (var i = 0; i < rows.length; i++) {
+    if (normaliseCode_(rows[i][1]) === wanted) return String(rows[i][0]).trim();
+  }
+  return '';
+}
+
+/** A teacher blocks a student by typing anything in the Blocked column, or ticking a checkbox. */
+function isBlocked_(value) {
+  var text = String(value === null || value === undefined ? '' : value).trim().toLowerCase();
+  return text !== '' && text !== 'false' && text !== 'no';
 }
 
 function openBook_() {
@@ -174,7 +228,13 @@ function findStudentRow_(book, email) {
   for (var i = 0; i < rows.length; i++) {
     if (normaliseEmail_(rows[i][0]) === email) {
       var os = String(rows[i][3]);
-      return { rowNumber: i + 2, os: VALID_OS.indexOf(os) === -1 ? null : os };
+      return {
+        rowNumber: i + 2,
+        name: String(rows[i][1]),
+        className: String(rows[i][2]),
+        os: VALID_OS.indexOf(os) === -1 ? null : os,
+        blocked: isBlocked_(rows[i][5])
+      };
     }
   }
   return null;

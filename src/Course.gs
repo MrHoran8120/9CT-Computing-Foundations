@@ -3,6 +3,9 @@
  *
  * Task IDs are permanent: saved progress depends on them. Change a label freely,
  * but never change or reuse an ID. To remove a task, delete it and leave its ID retired.
+ *
+ * extension: true marks an extra challenge for fast finishers. It doesn't count towards
+ * a lesson's progress. optional: true marks a lesson a teacher may choose not to run.
  */
 var COURSE = [
   {
@@ -38,6 +41,9 @@ var COURSE = [
         { id: 'L1-RESCUE-01', label: 'I extracted Sam\'s files and built a folder structure.' },
         { id: 'L1-RESCUE-02', label: 'I moved and renamed every file.' },
         { id: 'L1-RESCUE-03', label: 'I explained my structure and showed my teacher.' }
+      ] },
+      { title: 'Extra challenge: path puzzles', extension: true, tasks: [
+        { id: 'L1-EXTRA-01', label: 'I solved the path puzzles.' }
       ] }
     ]
   },
@@ -74,6 +80,9 @@ var COURSE = [
       { title: 'Hand it in', tasks: [
         { id: 'L2-SUBMIT-01', label: 'I checked my ZIP for the common mistakes.' },
         { id: 'L2-SUBMIT-02', label: 'I uploaded my ZIP to the Google Classroom task.' }
+      ] },
+      { title: 'Extra challenge: add a second page', extension: true, tasks: [
+        { id: 'L2-EXTRA-01', label: 'I added a second page that links to the first, and it still works after extracting.' }
       ] }
     ]
   },
@@ -106,6 +115,46 @@ var COURSE = [
       { title: 'Quiz and agreement', tasks: [
         { id: 'L3-QUIZ-01', label: 'I completed the quiz.' },
         { id: 'L3-AGREE-01', label: 'I read and agree to my responsibilities.' }
+      ] },
+      { title: 'Extra challenge: fact-check an AI', extension: true, tasks: [
+        { id: 'L3-EXTRA-01', label: 'I checked an AI answer against a reliable source and noted any differences.' }
+      ] }
+    ]
+  },
+  {
+    id: 'L4',
+    title: 'Your coding toolkit',
+    tab: 'Toolkit (optional)',
+    optional: true,
+    sections: [
+      { title: 'Your toolkit', tasks: [
+        { id: 'L4-TOOLS-01', label: 'I can say what a code editor and a terminal are for.' }
+      ] },
+      { title: 'Install VS Code', tasks: [
+        { id: 'L4-INSTALL-01', label: 'I downloaded and installed VS Code.' },
+        { id: 'L4-INSTALL-02', label: 'I opened VS Code from where it is installed.' }
+      ] },
+      { title: 'Open a project folder', tasks: [
+        { id: 'L4-FOLDER-01', label: 'I opened my repaired bake sale folder in VS Code.' },
+        { id: 'L4-FOLDER-02', label: 'The file list in VS Code matches the folder on my computer.' }
+      ] },
+      { title: 'Edit and check', tasks: [
+        { id: 'L4-EDIT-01', label: 'I changed the heading in index.html and saved it.' },
+        { id: 'L4-EDIT-02', label: 'I reloaded the page in my browser and saw the change.' }
+      ] },
+      { title: 'Terminal: where am I?', tasks: [
+        { id: 'L4-TERM-01', label: 'I opened the terminal in VS Code.' },
+        { id: 'L4-TERM-02', label: 'I used pwd and ls, and the path matched what I expected.' }
+      ] },
+      { title: 'Terminal: moving around', tasks: [
+        { id: 'L4-TERM-03', label: 'I moved between folders with cd and cd ..' },
+        { id: 'L4-TERM-04', label: 'I made a folder with mkdir and found it in File Explorer or Finder.' }
+      ] },
+      { title: 'Terminal challenge', tasks: [
+        { id: 'L4-CHALLENGE-01', label: 'I completed the challenge using only the terminal.' }
+      ] },
+      { title: 'Extra challenge: build a project with commands', extension: true, tasks: [
+        { id: 'L4-EXTRA-01', label: 'I built a whole project folder structure using only commands.' }
       ] }
     ]
   }

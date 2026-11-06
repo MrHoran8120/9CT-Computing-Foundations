@@ -6,10 +6,10 @@ private/
 # Real rosters and other student data
 *roster*.csv
 *roster*.xlsx
-!dev/sample-roster.csv
 
 # Google Apps Script tooling: holds the script ID and sign-in tokens
 .clasp.json
+.deployment.json
 .clasprc.json
 creds.json
 

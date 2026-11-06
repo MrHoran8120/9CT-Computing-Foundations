@@ -1,9 +1,9 @@
 # Computing Foundations
 
-A three-lesson Year 9 course: a Google Apps Script web app, embedded in Google Sites, that saves progress to a private Google Sheet.
+A Year 9 course of three core lessons and an optional fourth: a Google Apps Script web app that opens in its own tab from a link on a Google Site and saves progress to a private Google Sheet. The app must not be embedded in the Site.
 
 **This repository is public.** Never commit:
-- student names, emails or rosters (only the made-up `dev/sample-roster.csv`)
+- student names, emails, rosters or real class codes
 - spreadsheet IDs, script IDs or deployment URLs
 - anything from `private/`, including the handover and the school's AI policy
 
@@ -12,10 +12,11 @@ Quiz answers and answer keys are fine in the repo. The teacher decided that prot
 Rules:
 - Requirements are in `private/reference/PROJECT_CONTEXT.md`. This is a reconstruction, as the original starter was never recovered.
 - Task IDs in `src/Course.gs` are permanent. Change a task's wording freely, but never change or reuse its ID, because saved progress depends on it.
-- Student identity comes only from `Session.getActiveUser()` on the server. Never accept an identity from the browser.
+- Student identity comes only from `Session.getActiveUser()` on the server. Never accept an identity from the browser. A class code only decides whether someone can join and which class they're in.
 - `src/Scripts.html` must not contain mock code. Local preview adds its mock in `dev/build-preview.js`.
 - Use Australian English and a Year 9 reading level. Keep shared content in one place, with only platform steps differing between Windows and Mac.
 
 Commands:
-- `npm test` runs the server tests against a fake Sheet.
+- `npm test` runs the tests against a fake Sheet and a fake clasp.
 - `npm run preview` builds `dev/preview.html`, which runs in a browser with a mock server.
+- `npm run setup` creates and deploys a teacher's own copy with clasp, and `npm run update` uploads changes and keeps the same URL. Only run these when the teacher asks, because they change their real Google project.

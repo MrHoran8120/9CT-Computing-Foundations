@@ -2,7 +2,7 @@
 // It doesn't test Google sign-in or the real Sheet. Those need a real deployment.
 //
 // Add one of these to the file's address to try other situations:
-//   #not-on-roster   #no-identity   #save-fails   #new-student
+//   #new-student (the class code is demo-code)   #blocked   #no-identity   #save-fails   #load-fails
 const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
@@ -19,11 +19,20 @@ const mock = `<script>
     var scene = location.hash.slice(1);
     var os = scene === 'new-student' ? null : 'win';
     var saved = scene === 'new-student' ? {} : { 'L1-APPS-01': true, 'L1-NAV-01': true };
+    var joined = scene === 'new-student' ? null : 'Student 01';
     var server = {
       getBootstrap: function () {
-        if (scene === 'not-on-roster') return { status: 'not_on_roster' };
+        if (scene === 'load-fails') throw new Error('The course has no spreadsheet yet. Run setupSheets.');
+        if (scene === 'blocked') return { status: 'blocked' };
         if (scene === 'no-identity') return { status: 'no_identity' };
-        return { status: 'ok', student: { name: 'Student 01', className: 'Class A', os: os }, course: ${course}, progress: saved };
+        if (!joined) return { status: 'needs_registration' };
+        return { status: 'ok', student: { name: joined, className: 'Class A', os: os }, course: ${course}, progress: saved };
+      },
+      registerStudent: function (name, code) {
+        if (!/^[A-Za-z][A-Za-z '.-]*$/.test(name.trim())) return { status: 'invalid_name' };
+        if (code.trim().toLowerCase() !== 'demo-code') return { status: 'wrong_code' };
+        joined = name.trim();
+        return { status: 'registered' };
       },
       setOs: function (value) { if (scene === 'save-fails') throw new Error('Mock failure'); os = value; return { os: value }; },
       setTask: function (id, done) { if (scene === 'save-fails') throw new Error('Mock failure'); return { taskId: id, done: done }; }

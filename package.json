@@ -5,6 +5,8 @@
   "description": "Year 9 Computing Foundations course: Google Apps Script web app",
   "scripts": {
     "test": "node --test",
-    "preview": "node dev/build-preview.js"
+    "preview": "node dev/build-preview.js",
+    "setup": "node dev/clasp-deploy.js setup",
+    "update": "node dev/clasp-deploy.js update"
   }
 }

@@ -10,6 +10,7 @@
         if (key === 'text') node.textContent = attrs[key];
         else if (key === 'onclick') node.addEventListener('click', attrs[key]);
         else if (key === 'onchange') node.addEventListener('change', attrs[key]);
+        else if (key === 'onsubmit') node.addEventListener('submit', attrs[key]);
         else if (key === 'class') node.className = attrs[key];
         else if (key === 'checked' || key === 'disabled') node[key] = attrs[key];
         else node.setAttribute(key, attrs[key]);
@@ -37,10 +38,12 @@
             'Make sure you\'re signed in with your school Google account.',
             'If you\'re signed in to more than one Google account, sign out of the others and reload this page.'
           ]);
-        } else if (data.status === 'not_on_roster') {
-          showMessage('You\'re not on the class list yet', [
-            'You\'re signed in, but your account isn\'t on the list for this course.',
-            'Please ask your teacher to add you.'
+        } else if (data.status === 'needs_registration') {
+          renderRegistration();
+        } else if (data.status === 'blocked') {
+          showMessage('You can\'t use this course', [
+            'Your account has been removed from this course.',
+            'If you think this is a mistake, talk to your teacher.'
           ]);
         } else {
           state.student = data.student;
@@ -48,11 +51,59 @@
           state.progress = data.progress;
           state.student.os ? renderCourse() : renderOsChoice();
         }
-      }, function () {
-        showMessage('The course didn\'t load', [
-          'Reload the page. If that doesn\'t work, tell your teacher.'
-        ]);
+      }, function (error) {
+        var lines = ['Reload the page. If that doesn\'t work, tell your teacher.'];
+        if (error && error.message) lines.push('Details for your teacher: ' + error.message);
+        showMessage('The course didn\'t load', lines);
       });
+    }
+
+    function renderRegistration() {
+      var note = el('p', { class: 'status', role: 'status' });
+      var name = el('input', { id: 'join-name', type: 'text', autocomplete: 'name', maxlength: '60', required: 'required' });
+      var code = el('input', {
+        id: 'join-code', type: 'text', autocomplete: 'off', autocapitalize: 'none', spellcheck: 'false',
+        required: 'required', 'aria-describedby': 'code-hint'
+      });
+      var submit = el('button', { type: 'submit', class: 'btn', text: 'Join the course' });
+
+      function problem(text) {
+        note.className = 'status bad';
+        note.textContent = text;
+        submit.disabled = false;
+      }
+
+      function join(event) {
+        event.preventDefault();
+        submit.disabled = true;
+        note.className = 'status busy';
+        note.textContent = 'Joining…';
+        call('registerStudent', [name.value, code.value], function (result) {
+          if (result.status === 'wrong_code') problem('That class code didn\'t work. Check it with your teacher and try again.');
+          else if (result.status === 'invalid_name') problem('Please enter your name using letters only.');
+          else start();
+        }, function () {
+          problem('That didn\'t work. Please try again. If it keeps happening, tell your teacher.');
+        });
+      }
+
+      app.replaceChildren(el('div', { class: 'home L1' }, [
+        el('h1', { text: 'Join Computing Foundations' }),
+        el('p', { text: 'You only need to do this once. After that, the course will recognise your school Google account.' }),
+        el('form', { class: 'join', onsubmit: join }, [
+          el('div', { class: 'field' }, [
+            el('label', { for: 'join-name', text: 'Your first and last name' }),
+            name
+          ]),
+          el('div', { class: 'field' }, [
+            el('label', { for: 'join-code', text: 'Class code' }),
+            el('span', { class: 'hint', id: 'code-hint', text: 'Your teacher will give you this.' }),
+            code
+          ]),
+          el('div', {}, [submit]),
+          note
+        ])
+      ]));
     }
 
     function renderOsChoice() {
@@ -83,7 +134,9 @@
 
     function lessonTasks(lesson) {
       var tasks = [];
-      lesson.sections.forEach(function (section) { tasks = tasks.concat(section.tasks); });
+      lesson.sections.forEach(function (section) {
+        if (!section.extension) tasks = tasks.concat(section.tasks);
+      });
       return tasks;
     }
 
@@ -163,7 +216,9 @@
           ]),
           el('main', { class: 'main' }, [
             el('div', { class: 'card' }, [
-              el('span', { class: 'eyebrow', text: 'Section ' + (state.section + 1) + ' of ' + lesson.sections.length }),
+              el('span', { class: 'eyebrow', text: section.extension
+                ? 'If you finish early'
+                : 'Section ' + (state.section + 1) + ' of ' + lesson.sections.filter(function (item) { return !item.extension; }).length }),
               el('h2', { text: section.title }),
               el('p', { class: 'placeholder', text: 'The lesson content for this section is still being written.' }),
               taskList,
