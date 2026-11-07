@@ -129,7 +129,7 @@ Ask someone to do this with a real student account. If you only have your own ac
 
 The **Dashboard** tab of your Sheet shows a class's progress with bars, and updates by itself as students tick tasks.
 
-1. Choose a class and how to sort it at the top of the tab. Sorting by **Name** avoids ranking students in front of the class.
+1. Choose a class, or **All classes**, and how to sort it at the top of the tab. Sorting by **Name** avoids ranking students in front of the class, and sorting by **Class** keeps each class together.
 2. Click **View**, then **Full screen**, so only the Dashboard is on show.
 
 It shows first names and last initials only. Other tabs in the Sheet hold student emails, so stay on the Dashboard while it's on the board. Blocked students and extra challenges aren't included, and the optional lesson doesn't count towards **Overall**.

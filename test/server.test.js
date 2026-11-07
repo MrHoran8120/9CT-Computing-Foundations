@@ -416,14 +416,27 @@ test('the Dashboard leaves out blocked students, extra challenges and optional l
   const data = sheets['Dashboard data'].cells;
   assert.match(data.K2, /D2:D=TRUE/);
   assert.match(data.E2, /"L1-EXTRA-\*"/);
-  assert.match(data.I2, /E2:E\*\$R\$2\+F2:F\*\$S\$2\+G2:G\*\$T\$2/);
+  assert.match(data.I2, /E2:E\*\$S\$2\+F2:F\*\$T\$2\+G2:G\*\$U\$2/);
   assert.ok(!/H2:H/.test(data.I2), 'Lesson 4 is optional');
+});
+
+test('the Dashboard can show every class, labelled and sorted by class', () => {
+  const { ctx, sheets } = load();
+  ctx.setupSheets();
+  const data = sheets['Dashboard data'].cells;
+  assert.match(data.K2, /Dashboard!\$C\$4="All classes",C2:C<>""/);
+  assert.match(data.K2, /Dashboard!\$F\$4="Class",7/);
+  assert.match(data.X2, /^=\{"All classes";/);
+  assert.match(sheets.Dashboard.cells.C10, /\$C\$4="All classes".*!Q2/);
+  assert.match(sheets.Dashboard.cells.C9, /"Class"/);
+  assert.ok(sheets.Dashboard.cells.B209, 'has 200 student rows');
+  assert.strictEqual(sheets.Dashboard.cells.B210.includes('first 200'), true);
 });
 
 test('course changes correct the Dashboard totals when the next student loads the app', () => {
   const { ctx, sheets } = load();
   ctx.setupSheets();
-  const totals = () => Array.from(sheets['Dashboard data'].rows[1].slice(17, 21));
+  const totals = () => Array.from(sheets['Dashboard data'].rows[1].slice(18, 22));
   assert.deepStrictEqual(totals(), [15, 15, 9, 12]);
   ctx.COURSE[0].sections[0].tasks.push({ id: 'L1-APPS-99', label: 'New task' });
   ctx.getBootstrap();
