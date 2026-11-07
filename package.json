@@ -6,6 +6,7 @@
   "scripts": {
     "test": "node --test",
     "preview": "node dev/build-preview.js",
+    "exercise-files": "node dev/build-exercise-files.js",
     "setup": "node dev/clasp-deploy.js setup",
     "update": "node dev/clasp-deploy.js update"
   }

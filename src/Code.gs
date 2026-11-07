@@ -85,7 +85,7 @@ function getBootstrap() {
   return {
     status: 'ok',
     student: { name: who.name, className: who.className, os: who.os },
-    course: COURSE,
+    course: courseWithContent_(),
     progress: progress
   };
 }
@@ -107,6 +107,14 @@ function registerStudent(name, code) {
     book.getSheetByName(SHEETS.STUDENTS.name).appendRow([email, cleanName, className, '', new Date(), '']);
     return { status: 'registered' };
   });
+}
+
+/** Returns a lesson file for the signed-in student to download. */
+function getExerciseFile(name) {
+  requireStudent_();
+  if (!Object.prototype.hasOwnProperty.call(EXERCISE_FILES, name)) throw new Error('Unknown file.');
+  var file = EXERCISE_FILES[name];
+  return { name: name, mime: file.mime, data: file.data };
 }
 
 /** Saves the signed-in student's Windows or Mac choice. */

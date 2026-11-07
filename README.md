@@ -7,7 +7,7 @@ An interactive introductory computing course for Year 9 students, with three cor
 3. **AI and assessment:** AI permission levels, explaining your own work, and acknowledging AI use.
 4. **Your coding toolkit (optional):** installing VS Code, working in a project folder and using the terminal.
 
-Each lesson also has an extra challenge for students who finish early.
+Each lesson also has at least one extra challenge for students who finish early.
 
 Students work through one web app, choosing Windows or Mac instructions. Their progress saves to a private Google Sheet that the teacher uses as a dashboard.
 
@@ -33,6 +33,7 @@ You'll need [Node.js](https://nodejs.org) 20 or later. There are no packages to 
 ```text
 npm test           Run the tests against a fake Sheet and a fake clasp
 npm run preview    Build dev/preview.html, which runs in a browser with a mock server
+npm run exercise-files    Rebuild the files students download
 npm run setup      Create and deploy your own copy (see docs/setup.md)
 npm run update     Upload changes to your copy, keeping the same URL
 ```
@@ -47,7 +48,7 @@ The preview is for checking layout and behaviour. It doesn't test Google sign-in
 | `test/` | Server and setup script tests |
 | `dev/` | Setup script and local preview tooling |
 | `docs/` | Teacher guides |
-| `exercise-files/` | Files students download during the lessons |
+| `exercise-files/` | Copies of the files students download during the lessons |
 
 ## Using this with your own classes
 

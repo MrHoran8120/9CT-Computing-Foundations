@@ -50,6 +50,9 @@ The first run downloads `clasp`, Google's tool for uploading Apps Script files, 
 | `Code` | Already there | `src/Code.gs` |
 | `Course` | Script | `src/Course.gs` |
 | `Dashboard` | Script | `src/Dashboard.gs` |
+| `Diagrams` | Script | `src/Diagrams.gs` |
+| `ExerciseFiles` | Script | `src/ExerciseFiles.gs` |
+| `Lesson1` | Script | `src/Lesson1.gs` |
 | `Index` | HTML | `src/Index.html` |
 | `Styles` | HTML | `src/Styles.html` |
 | `Scripts` | HTML | `src/Scripts.html` |

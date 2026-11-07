@@ -89,7 +89,9 @@ function load({ email = 'a@school.test', spreadsheetId = 'ID', lockFree = true }
   vm.createContext(ctx);
   vm.runInContext(fs.readFileSync(path.join(src, 'Course.gs'), 'utf8'), ctx);
   vm.runInContext(fs.readFileSync(path.join(src, 'Code.gs'), 'utf8'), ctx);
-  vm.runInContext(fs.readFileSync(path.join(src, 'Dashboard.gs'), 'utf8'), ctx);
+  ['Dashboard.gs', 'Diagrams.gs', 'Lesson1.gs', 'ExerciseFiles.gs'].forEach((file) => {
+    vm.runInContext(fs.readFileSync(path.join(src, file), 'utf8'), ctx);
+  });
   if (spreadsheetId) {
     ctx.setupSheets();
     sheets.Classes.appendRow(['Class A', ' Maple-42 ']);
@@ -352,19 +354,61 @@ test('progress saved under a retired task ID is ignored', () => {
 test('every task ID is unique and follows the naming pattern', () => {
   const { ctx } = load();
   const ids = Array.from(ctx.allTaskIds_());
-  assert.strictEqual(ids.length, 55);
+  assert.strictEqual(ids.length, 60);
   assert.strictEqual(new Set(ids).size, ids.length);
   ids.forEach((id) => assert.match(id, /^L[1-4]-[A-Z]+-\d{2}$/));
 });
 
-test('each lesson has the expected core tasks and one extra challenge', () => {
+test('each lesson has the expected core tasks and extra challenges', () => {
   const { ctx } = load();
   const counts = Array.from(ctx.COURSE).map((lesson) => {
     const sections = Array.from(lesson.sections);
     const core = sections.filter((s) => !s.extension);
     return [core.reduce((n, s) => n + s.tasks.length, 0), sections.length - core.length];
   });
-  assert.deepStrictEqual(counts, [[15, 1], [15, 1], [9, 1], [12, 1]]);
+  assert.deepStrictEqual(counts, [[15, 6], [15, 1], [9, 1], [12, 1]]);
+});
+
+test('extra challenges come after the core sections and are saved as extras', () => {
+  const { ctx } = load();
+  Array.from(ctx.COURSE).forEach((lesson) => {
+    const flags = Array.from(lesson.sections).map((section) => Boolean(section.extension));
+    assert.strictEqual(flags.indexOf(true), flags.filter((flag) => !flag).length, lesson.id);
+    Array.from(lesson.sections).filter((section) => section.extension).forEach((section) => {
+      Array.from(section.tasks).forEach((task) => assert.match(task.id, new RegExp('^' + lesson.id + '-EXTRA-')));
+    });
+  });
+});
+
+test('the answers to the "find files fast" challenge match Sam\'s real files', () => {
+  const { ctx } = load();
+  const zip = Buffer.from(ctx.EXERCISE_FILES['sams-files.zip'].data, 'base64');
+  const files = [];
+  let at = zip.indexOf(Buffer.from([0x50, 0x4b, 0x01, 0x02]));
+  while (at > -1 && zip.readUInt32LE(at) === 0x02014b50) {
+    const nameLength = zip.readUInt16LE(at + 28);
+    files.push({
+      name: zip.toString('utf8', at + 46, at + 46 + nameLength).replace('Sams files/', ''),
+      date: zip.readUInt16LE(at + 14),
+      size: zip.readUInt32LE(at + 24)
+    });
+    at += 46 + nameLength;
+  }
+  assert.strictEqual(files.length, 15);
+  const largest = [...files].sort((a, b) => b.size - a.size);
+  const newest = [...files].sort((a, b) => b.date - a.date);
+  assert.strictEqual(largest[0].name, 'logo-new.png');
+  assert.ok(largest[0].size > largest[1].size);
+  assert.strictEqual(newest[0].name, 'assignment final FINAL v2.docx');
+  assert.ok(newest[0].date > newest[1].date);
+  assert.strictEqual(new Set(files.map((file) => file.date)).size, 15, 'every date differs');
+  assert.strictEqual(files.filter((file) => file.name.endsWith('.pdf')).length, 4);
+
+  const blocks = flat(ctx.lesson1Content_())['L1-EXTRA-04'];
+  const picked = (id) => { const block = blocks.find((item) => item.id === id); return block.options[block.answer]; };
+  assert.strictEqual(picked('find1'), '`logo-new.png`');
+  assert.strictEqual(picked('find2'), '`assignment final FINAL v2.docx`');
+  assert.strictEqual(picked('find3'), '4');
 });
 
 test('only Lesson 4 is optional', () => {
@@ -449,6 +493,87 @@ test('a Dashboard problem never stops a student loading the app', () => {
   ctx.COURSE[0].sections[0].tasks.push({ id: 'L1-APPS-99', label: 'New task' });
   sheets['Dashboard data'].getRange = () => { throw new Error('tab broken'); };
   assert.strictEqual(ctx.getBootstrap().status, 'ok');
+});
+
+const flat = (value) => JSON.parse(JSON.stringify(value));
+const lessonOne = (ctx) => flat(ctx.courseWithContent_())[0];
+
+test('every Lesson 1 section has content, and every first task ID matches one', () => {
+  const { ctx } = load();
+  const lesson = lessonOne(ctx);
+  lesson.sections.forEach((section) => assert.ok(section.content, section.title));
+  const known = lesson.sections.map((section) => section.tasks[0].id);
+  Object.keys(flat(ctx.lesson1Content_())).forEach((id) => assert.ok(known.includes(id), id));
+});
+
+test('students turn on file extensions before they first download or rename a file', () => {
+  const { ctx } = load();
+  const lesson = lessonOne(ctx);
+  const firstDownload = lesson.sections.findIndex((section) => section.content.some((block) => block.type === 'download'));
+  const turnedOn = lesson.sections.findIndex((section) => section.tasks.some((task) => task.id === 'L1-EXT-01'));
+  assert.strictEqual(turnedOn, firstDownload);
+  const blocks = lesson.sections[turnedOn].content;
+  const steps = blocks.findIndex((block) => JSON.stringify(block).includes('File name extensions'));
+  assert.ok(steps > -1 && steps < blocks.findIndex((block) => block.type === 'download'));
+});
+
+test('lesson content is valid for both Windows and Mac', () => {
+  const { ctx } = load();
+  const blockTypes = ['objective', 'concept', 'tip', 'diagram', 'steps', 'keys', 'download', 'choice', 'match', 'tree'];
+  const bothOrShared = (value, where) => {
+    if (value && typeof value === 'object') {
+      assert.ok(value.win && value.mac, where + ' needs both Windows and Mac');
+    } else {
+      assert.ok(value, where + ' is empty');
+    }
+  };
+  const ids = new Set();
+  lessonOne(ctx).sections.forEach((section) => section.content.forEach((block) => {
+    const where = section.title + ': ' + block.type;
+    assert.ok(blockTypes.includes(block.type), where);
+    if (block.only) assert.ok(['win', 'mac'].includes(block.only), where);
+    if (block.type === 'diagram') { bothOrShared(block.svg, where); bothOrShared(block.alt, where); }
+    if (block.type === 'steps') { assert.ok(block.title, where); block.steps.forEach((step) => bothOrShared(step, where)); }
+    if (block.type === 'keys') block.rows.forEach((row) => bothOrShared(row[1], where));
+    if (block.type === 'download') assert.ok(ctx.EXERCISE_FILES[block.file], block.file);
+    if (block.type === 'choice') {
+      block.options.forEach((option) => bothOrShared(option, where));
+      assert.ok(block.answer >= 0 && block.answer < block.options.length, where);
+    }
+    if (block.type === 'match') block.items.forEach((item) => assert.ok(block.choices.includes(item.answer), item.text));
+    if (block.id) { assert.ok(!ids.has(block.id), 'repeated id ' + block.id); ids.add(block.id); }
+  }));
+});
+
+test('drawings are complete and hold no scripts', () => {
+  const { ctx } = load();
+  [ctx.appFileDiagram_(), ctx.olderWindowsExtensionsDiagram_(), ctx.windowDiagram_('win'), ctx.windowDiagram_('mac'), ctx.pathDiagram_('win'), ctx.pathDiagram_('mac'),
+    ctx.copyMoveDiagram_(), ctx.extensionDiagram_(), ctx.storageDiagram_()].forEach((svg) => {
+    assert.match(svg, /^<svg .*<\/svg>$/s);
+    assert.ok(!/<script|on[a-z]+=|href=/i.test(svg));
+    assert.ok(!/undefined|NaN/.test(svg));
+  });
+});
+
+test('a student can download lesson files, and nobody else can get them', () => {
+  const { ctx } = load();
+  const file = ctx.getExerciseFile('test-file.txt');
+  assert.strictEqual(file.name, 'test-file.txt');
+  assert.match(Buffer.from(file.data, 'base64').toString(), /found the test file/);
+  ['../Code.gs', 'constructor', '__proto__', 'nope.txt'].forEach((name) => assert.throws(() => ctx.getExerciseFile(name), /Unknown file/));
+  ctx.currentEmail = 'stranger@school.test';
+  assert.throws(() => ctx.getExerciseFile('test-file.txt'));
+});
+
+test('Sam\'s ZIP holds 15 files in one folder', () => {
+  const { ctx } = load();
+  const zip = Buffer.from(ctx.EXERCISE_FILES['sams-files.zip'].data, 'base64');
+  const names = [];
+  for (let at = zip.indexOf('PK\x01\x02'); at !== -1; at = zip.indexOf('PK\x01\x02', at + 4)) {
+    names.push(zip.toString('utf8', at + 46, at + 46 + zip.readUInt16LE(at + 28)));
+  }
+  assert.strictEqual(names.length, 15);
+  names.forEach((name) => assert.match(name, /^Sams files\/[^/]+\.[a-z]+$/));
 });
 
 test('deployment settings run as the teacher, for the organisation only', () => {

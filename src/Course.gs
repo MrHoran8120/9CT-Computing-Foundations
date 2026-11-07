@@ -18,6 +18,7 @@ var COURSE = [
       ] },
       { title: 'Find your way around', tasks: [
         { id: 'L1-NAV-01', label: 'I opened Downloads and Documents.' },
+        { id: 'L1-EXT-01', label: 'I turned on visible file extensions.' },
         { id: 'L1-NAV-02', label: 'I downloaded the test file and found it.' }
       ] },
       { title: 'Folders and paths', tasks: [
@@ -26,12 +27,11 @@ var COURSE = [
       ] },
       { title: 'Create, copy, move, rename, delete', tasks: [
         { id: 'L1-MANAGE-01', label: 'I made Documents › Year 9 › Science.' },
-        { id: 'L1-MANAGE-02', label: 'I copied a file, and the original is still there.' },
-        { id: 'L1-MANAGE-03', label: 'I moved a file, and it is gone from where it was.' },
-        { id: 'L1-MANAGE-04', label: 'I renamed a file, deleted it, then got it back.' }
+        { id: 'L1-MANAGE-02', label: 'I copied test-file.txt into Science, and the original is still in Downloads.' },
+        { id: 'L1-MANAGE-03', label: 'I moved photo.jpg into Year 9, and it is gone from Downloads.' },
+        { id: 'L1-MANAGE-04', label: 'I renamed photo.jpg, deleted it, then got it back.' }
       ] },
       { title: 'File extensions', tasks: [
-        { id: 'L1-EXT-01', label: 'I turned on visible file extensions.' },
         { id: 'L1-EXT-02', label: 'I matched each extension to what it is.' }
       ] },
       { title: 'Local and cloud', tasks: [
@@ -44,6 +44,21 @@ var COURSE = [
       ] },
       { title: 'Extra challenge: path puzzles', extension: true, tasks: [
         { id: 'L1-EXTRA-01', label: 'I solved the path puzzles.' }
+      ] },
+      { title: 'Extra challenge: break a file on purpose', extension: true, tasks: [
+        { id: 'L1-EXTRA-02', label: 'I broke a copy of a file by changing its extension, then fixed it.' }
+      ] },
+      { title: 'Extra challenge: one naming rule', extension: true, tasks: [
+        { id: 'L1-EXTRA-03', label: 'I wrote one naming rule and used it for all of Sam\'s files.' }
+      ] },
+      { title: 'Extra challenge: find files fast', extension: true, tasks: [
+        { id: 'L1-EXTRA-04', label: 'I used search and sorting to answer questions about Sam\'s files.' }
+      ] },
+      { title: 'Extra challenge: one file, two versions', extension: true, tasks: [
+        { id: 'L1-EXTRA-05', label: 'I worked out what happens when one file is changed in two places.' }
+      ] },
+      { title: 'Extra challenge: one file, two apps', extension: true, tasks: [
+        { id: 'L1-EXTRA-06', label: 'I opened the same file in two different apps.' }
       ] }
     ]
   },
@@ -169,4 +184,29 @@ function allTaskIds_() {
     });
   });
   return ids;
+}
+
+/**
+ * Joins each section to its lesson content. Content is looked up by the section's first task ID,
+ * which never changes. A section without content shows a "still being written" note.
+ */
+function courseWithContent_() {
+  var content = { L1: lesson1Content_() };
+  return COURSE.map(function (lesson) {
+    var lessonContent = content[lesson.id] || {};
+    return {
+      id: lesson.id,
+      title: lesson.title,
+      tab: lesson.tab,
+      optional: lesson.optional,
+      sections: lesson.sections.map(function (section) {
+        return {
+          title: section.title,
+          extension: section.extension,
+          tasks: section.tasks,
+          content: lessonContent[section.tasks[0].id] || null
+        };
+      })
+    };
+  });
 }

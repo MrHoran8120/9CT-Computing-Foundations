@@ -11,8 +11,10 @@ const src = path.join(__dirname, '..', 'src');
 const read = (name) => fs.readFileSync(path.join(src, name), 'utf8');
 
 const sandbox = {};
-vm.runInNewContext(read('Course.gs'), sandbox);
-const course = JSON.stringify(sandbox.COURSE);
+vm.createContext(sandbox);
+['Course.gs', 'Diagrams.gs', 'Lesson1.gs', 'ExerciseFiles.gs'].forEach((name) => vm.runInContext(read(name), sandbox));
+const course = JSON.stringify(vm.runInContext('courseWithContent_()', sandbox));
+const files = JSON.stringify(sandbox.EXERCISE_FILES);
 
 const mock = `<script>
   (function () {
@@ -33,6 +35,11 @@ const mock = `<script>
         if (code.trim().toLowerCase() !== 'demo-code') return { status: 'wrong_code' };
         joined = name.trim();
         return { status: 'registered' };
+      },
+      getExerciseFile: function (name) {
+        if (scene === 'save-fails') throw new Error('Mock failure');
+        var file = ${files}[name];
+        return { name: name, mime: file.mime, data: file.data };
       },
       setOs: function (value) { if (scene === 'save-fails') throw new Error('Mock failure'); os = value; return { os: value }; },
       setTask: function (id, done) { if (scene === 'save-fails') throw new Error('Mock failure'); return { taskId: id, done: done }; }

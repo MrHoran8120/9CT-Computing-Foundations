@@ -1,6 +1,6 @@
 <script>
   (function () {
-    var state = { student: null, course: [], progress: {}, lesson: 0, section: 0, saving: {} };
+    var state = { student: null, course: [], progress: {}, lesson: 0, section: 0, saving: {}, answers: {} };
     var app = document.getElementById('app');
 
     /* Builds an element. Text always goes in as text, never as HTML. */
@@ -144,6 +144,207 @@
       return section.tasks.every(function (task) { return state.progress[task.id]; });
     }
 
+    /* Lesson text can differ by computer: { win: '...', mac: '...' }. */
+    function forOs(value) {
+      if (value && typeof value === 'object' && !Array.isArray(value)) return value[state.student.os] || '';
+      return value;
+    }
+
+    /* Turns **bold**, `code` and [[key]] into elements. Text always goes in as text. */
+    function richText(tag, attrs, value) {
+      var node = el(tag, attrs);
+      var text = forOs(value);
+      var pattern = /\*\*(.+?)\*\*|`(.+?)`|\[\[(.+?)\]\]/g;
+      var last = 0;
+      var match;
+      while ((match = pattern.exec(text))) {
+        node.appendChild(document.createTextNode(text.slice(last, match.index)));
+        if (match[1]) node.appendChild(el('strong', { text: match[1] }));
+        if (match[2]) node.appendChild(el('code', { text: match[2] }));
+        if (match[3]) node.appendChild(el('kbd', { text: match[3] }));
+        last = pattern.lastIndex;
+      }
+      node.appendChild(document.createTextNode(text.slice(last)));
+      return node;
+    }
+
+    function renderContent(section) {
+      if (!section.content) {
+        return el('p', { class: 'placeholder', text: 'The lesson content for this section is still being written.' });
+      }
+      return el('div', { class: 'content' }, section.content.map(renderBlock));
+    }
+
+    function renderBlock(block) {
+      if (block.only && block.only !== state.student.os) return null;
+      if (block.type === 'objective') return richText('p', { class: 'objective' }, block.text);
+      if (block.type === 'concept') return richText('p', { class: 'concept' }, block.text);
+      if (block.type === 'tip') return richText('p', { class: 'tip' }, block.text);
+      if (block.type === 'diagram') return renderDiagram(block);
+      if (block.type === 'steps') return renderSteps(block);
+      if (block.type === 'keys') return renderKeys(block);
+      if (block.type === 'download') return renderDownload(block);
+      if (block.type === 'choice') return renderChoice(block);
+      if (block.type === 'match') return renderMatch(block);
+      if (block.type === 'tree') return renderTree(block);
+      return null;
+    }
+
+    /* Diagrams are fixed drawings from Diagrams.gs. They contain no student or browser input. */
+    function renderDiagram(block) {
+      var drawing = el('div', { class: 'diagram', role: 'img', 'aria-label': forOs(block.alt) });
+      drawing.innerHTML = forOs(block.svg);
+      return el('figure', { class: 'figure' }, [
+        drawing,
+        block.caption ? richText('figcaption', {}, block.caption) : null
+      ]);
+    }
+
+    function renderSteps(block) {
+      return el('div', { class: 'block' }, [
+        el('h3', { text: block.title }),
+        block.intro ? richText('p', {}, block.intro) : null,
+        el('ol', { class: 'steps' }, block.steps.map(function (step) { return richText('li', {}, step); }))
+      ]);
+    }
+
+    function renderKeys(block) {
+      return el('div', { class: 'block' }, [
+        el('h3', { text: block.title }),
+        el('table', { class: 'keys' }, [el('tbody', {}, block.rows.map(function (row) {
+          return el('tr', {}, [el('th', { scope: 'row', text: row[0] }), richText('td', {}, row[1])]);
+        }))])
+      ]);
+    }
+
+    /* Builds the file in the browser, so lessons need no hosting apart from this app. */
+    function renderDownload(block) {
+      var note = el('span', { class: 'status', role: 'status' });
+      var button = el('button', { type: 'button', class: 'btn', text: block.label });
+      button.addEventListener('click', function () {
+        button.disabled = true;
+        note.className = 'status busy';
+        note.textContent = 'Getting your file…';
+        call('getExerciseFile', [block.file], function (file) {
+          var bytes = Uint8Array.from(atob(file.data), function (c) { return c.charCodeAt(0); });
+          var url = URL.createObjectURL(new Blob([bytes], { type: file.mime }));
+          var link = el('a', { href: url, download: file.name, target: '_self' });
+          document.body.appendChild(link);
+          link.click();
+          link.remove();
+          setTimeout(function () { URL.revokeObjectURL(url); }, 60000);
+          button.disabled = false;
+          note.className = 'status ok';
+          note.textContent = 'Check your Downloads folder.';
+        }, function () {
+          button.disabled = false;
+          note.className = 'status bad';
+          note.textContent = 'That didn\'t download. Please try again, or tell your teacher.';
+        });
+      });
+      return el('div', { class: 'download' }, [button, note]);
+    }
+
+    function renderChoice(block) {
+      var key = 'choice-' + block.id;
+      var feedback = el('p', { class: 'feedback', role: 'status' });
+      var buttons = [];
+      function show(index) {
+        buttons.forEach(function (button, i) {
+          button.className = 'option' + (i === index ? (i === block.answer ? ' right' : ' wrong') : '');
+          button.setAttribute('aria-pressed', i === index ? 'true' : 'false');
+        });
+        var right = index === block.answer;
+        feedback.className = 'feedback ' + (right ? 'ok' : 'bad');
+        var message = right ? 'Correct. ' + forOs(block.explain) : 'Not quite. Have another go.';
+        feedback.replaceChildren.apply(feedback, Array.from(richText('span', {}, message).childNodes));
+      }
+      block.options.forEach(function (option, i) {
+        buttons.push(richText('button', {
+          type: 'button', class: 'option', 'aria-pressed': 'false',
+          onclick: function () { state.answers[key] = i; show(i); }
+        }, option));
+      });
+      if (state.answers[key] !== undefined) show(state.answers[key]);
+      return el('div', { class: 'block activity' }, [
+        richText('p', { class: 'question' }, block.question),
+        el('div', { class: 'options' }, buttons),
+        feedback
+      ]);
+    }
+
+    function renderMatch(block) {
+      var key = 'match-' + block.id;
+      var chosen = state.answers[key] || (state.answers[key] = {});
+      var feedback = el('p', { class: 'feedback', role: 'status' });
+      var rows = [];
+
+      function check() {
+        var right = 0;
+        rows.forEach(function (row, i) {
+          var ok = row.select.value === block.items[i].answer;
+          if (ok) right += 1;
+          row.mark.textContent = row.select.value ? (ok ? '✓' : '✗') : '';
+          row.mark.className = 'mark ' + (ok ? 'ok' : 'bad');
+          row.mark.setAttribute('aria-label', row.select.value ? (ok ? 'Correct' : 'Try again') : '');
+        });
+        var all = right === rows.length;
+        feedback.className = 'feedback ' + (all ? 'ok' : 'bad');
+        feedback.textContent = all ? 'All correct. Well done.' : right + ' of ' + rows.length + ' correct. Change the ones marked ✗ and check again.';
+      }
+
+      var list = el('div', { class: 'match' }, block.items.map(function (item, i) {
+        var id = key + '-' + i;
+        var select = el('select', { id: id, onchange: function (event) { chosen[i] = event.target.value; } },
+          [el('option', { value: '', text: 'Choose…' })].concat(block.choices.map(function (choice) {
+            return el('option', { value: choice, text: choice });
+          })));
+        select.value = chosen[i] || '';
+        var mark = el('span', { class: 'mark' });
+        rows.push({ select: select, mark: mark });
+        return el('div', { class: 'match-row' }, [richText('label', { for: id }, item.text), select, mark]);
+      }));
+
+      return el('div', { class: 'block activity' }, [
+        richText('p', { class: 'question' }, block.prompt),
+        list,
+        el('div', {}, [el('button', { type: 'button', class: 'btn secondary', text: 'Check my answers', onclick: check })]),
+        feedback
+      ]);
+    }
+
+    function renderTree(block) {
+      var key = 'tree-selected';
+      var output = el('code', { class: 'path-out' });
+      var buttons = [];
+      function select(fullPath) {
+        state.answers[key] = fullPath;
+        var divider = forOs(block.divider);
+        output.textContent = forOs(block.start) + fullPath.split('/').join(divider);
+        buttons.forEach(function (item) {
+          item.button.className = item.path === fullPath ? 'selected' : '';
+        });
+      }
+      function branch(nodes, parent) {
+        return el('ul', { class: 'tree' }, nodes.map(function (node) {
+          var fullPath = parent ? parent + '/' + node.name : node.name;
+          var button = el('button', {
+            type: 'button', text: (node.children ? '📁 ' : '📄 ') + node.name,
+            onclick: function () { select(fullPath); }
+          });
+          buttons.push({ button: button, path: fullPath });
+          return el('li', {}, [button, node.children ? branch(node.children, fullPath) : null]);
+        }));
+      }
+      var tree = branch(block.nodes, '');
+      select(state.answers[key] || block.selected);
+      return el('div', { class: 'block activity' }, [
+        richText('p', { class: 'question' }, block.prompt),
+        tree,
+        el('div', { class: 'path-box', 'aria-live': 'polite' }, [el('span', { text: 'Path: ' }), output])
+      ]);
+    }
+
     function renderCourse() {
       var lesson = state.course[state.lesson];
       var section = lesson.sections[state.section];
@@ -220,7 +421,7 @@
                 ? 'If you finish early'
                 : 'Section ' + (state.section + 1) + ' of ' + lesson.sections.filter(function (item) { return !item.extension; }).length }),
               el('h2', { text: section.title }),
-              el('p', { class: 'placeholder', text: 'The lesson content for this section is still being written.' }),
+              renderContent(section),
               taskList,
               el('div', { class: 'foot' }, [status, next])
             ])
@@ -256,7 +457,9 @@
         if (wanted) state.progress[task.id] = true; else delete state.progress[task.id];
         box.disabled = false;
         renderCourse();
-        var fresh = document.querySelector('.status');
+        var saved = document.getElementById(task.id);
+        if (saved) saved.focus({ preventScroll: true });
+        var fresh = document.querySelector('.foot .status');
         fresh.className = 'status ok';
         fresh.textContent = 'Saved';
       }, function () {

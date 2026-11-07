@@ -64,6 +64,63 @@
   .os-choice button { border: 2px solid var(--line); background: var(--surface); border-radius: 9px; padding: 14px; font-weight: 700; }
   .os-choice button:hover { border-color: var(--l1); }
 
+  .content { display: grid; gap: 18px; }
+  .block { display: grid; gap: 10px; }
+  .block h3 { font-size: 1.1rem; }
+  .objective { color: var(--muted); font-weight: 700; }
+  .concept { background: var(--soft); border-left: 5px solid var(--acc); border-radius: 6px; padding: 13px 15px; max-width: none; }
+  .tip { background: var(--sunk); border: 1px solid var(--line); border-radius: 6px; padding: 10px 13px; font-size: .95rem; max-width: none; }
+  .tip::before { content: "Tip: "; font-weight: 700; }
+  code { font-family: Consolas, Menlo, monospace; font-size: .92em; background: var(--sunk); border: 1px solid var(--line); border-radius: 4px; padding: 0 4px; overflow-wrap: anywhere; }
+  kbd { font-family: inherit; font-size: .85em; font-weight: 700; background: var(--surface); border: 1px solid var(--muted); border-bottom-width: 2px; border-radius: 4px; padding: 0 5px; white-space: nowrap; }
+  .steps { margin: 0; padding-left: 26px; display: grid; gap: 7px; max-width: 72ch; }
+  .steps li::marker { color: var(--acc); font-weight: 700; }
+  .keys { border-collapse: collapse; width: 100%; font-size: .95rem; }
+  .keys th, .keys td { border-bottom: 1px solid var(--line); padding: 7px 10px 7px 0; text-align: left; vertical-align: top; }
+  .keys th { width: 80px; }
+  .figure { margin: 0; display: grid; gap: 7px; }
+  .figure figcaption { font-size: .9rem; color: var(--muted); }
+  .diagram { background: var(--sunk); border: 1px solid var(--line); border-radius: 8px; padding: 8px; max-width: 660px; }
+  .diagram svg { display: block; width: 100%; height: auto; }
+  .diagram text { font: 14px var(--body); }
+  .d-text { fill: var(--ink); }
+  .d-muted { fill: var(--muted); }
+  .d-heading { fill: var(--ink); font-weight: 700 !important; }
+  .d-panel { fill: var(--surface); stroke: var(--line); }
+  .d-sunk { fill: var(--surface); stroke: var(--line); }
+  .d-accent-soft { fill: var(--soft); stroke: var(--acc); }
+  .d-accent { fill: var(--acc); }
+  .d-on-accent { fill: var(--on); font-weight: 700 !important; }
+  .d-arrow { stroke: var(--acc); stroke-width: 2.5; }
+  .d-arrowhead { fill: var(--acc); }
+  .d-divider { stroke: var(--line); }
+  .d-tick { fill: none; stroke: var(--acc); stroke-width: 2.5; }
+  .d-folder { fill: #e8b23a; stroke: #a87c14; }
+  .d-file { fill: var(--surface); stroke: var(--muted); stroke-width: 1.5; }
+  .download { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+  .activity { border: 1.5px solid var(--acc); border-radius: 8px; padding: 14px; }
+  .question { font-weight: 700; max-width: none; }
+  .options { display: grid; gap: 7px; }
+  .option { text-align: left; background: var(--surface); border: 1.5px solid var(--line); border-radius: 7px; padding: 8px 12px; overflow-wrap: anywhere; }
+  .option:hover { border-color: var(--acc); }
+  .option.right { border-color: var(--ok); background: color-mix(in srgb, var(--ok) 12%, var(--surface)); }
+  .option.wrong { border-color: var(--bad); background: color-mix(in srgb, var(--bad) 10%, var(--surface)); }
+  .feedback { font-weight: 700; min-height: 1.4em; max-width: none; }
+  .feedback.ok, .mark.ok { color: var(--ok); }
+  .feedback.bad, .mark.bad { color: var(--bad); }
+  .match { display: grid; gap: 6px; }
+  .match-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(130px, 190px) 22px; gap: 10px; align-items: center; }
+  .match-row select { font: inherit; color: inherit; background: var(--surface); border: 1.5px solid var(--muted); border-radius: 6px; padding: 5px; width: 100%; }
+  .mark { font-weight: 700; }
+  .btn.secondary { background: transparent; color: var(--acc); border: 1.5px solid var(--acc); }
+  .tree { list-style: none; margin: 0; padding-left: 20px; display: grid; gap: 3px; }
+  .block > .tree { padding-left: 0; }
+  .tree button { background: none; border: 1px solid transparent; border-radius: 5px; padding: 2px 7px; text-align: left; }
+  .tree button:hover { border-color: var(--acc); }
+  .tree button.selected { background: var(--soft); border-color: var(--acc); font-weight: 700; }
+  .path-box { background: var(--sunk); border-radius: 6px; padding: 9px 12px; font-weight: 700; }
+  .path-out { background: none; border: 0; padding: 0; font-weight: 400; }
+
   .join { display: grid; gap: 16px; max-width: 420px; }
   .field { display: grid; gap: 4px; }
   .field label { font-weight: 700; }
