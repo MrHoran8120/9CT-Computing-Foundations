@@ -2,7 +2,7 @@
  * Course structure. This is the only list of lessons, sections and tasks.
  *
  * Task IDs are permanent: saved progress depends on them. Change a label freely,
- * but never change or reuse an ID. To remove a task, delete it and leave its ID retired.
+ * but never change or reuse an ID. To remove a task, delete it and add its ID to RETIRED_IDS.
  *
  * Lessons appear in the order listed here, which needn't match their IDs. unit groups lessons,
  * ready for a course with many of them.
@@ -10,6 +10,12 @@
  * extension: true marks an extra challenge for fast finishers. It doesn't count towards
  * a lesson's progress. optional: true marks a lesson a teacher may choose not to run.
  */
+/** IDs that were used once and must never be used again. */
+var RETIRED_IDS = [
+  'L4-EDIT-01', 'L4-EDIT-02', 'L4-TERM-01', 'L4-TERM-02', 'L4-TERM-03', 'L4-TERM-04',
+  'L4-CHALLENGE-01', 'L4-EXTRA-01'
+];
+
 var COURSE = [
   {
     id: 'L1',
@@ -99,11 +105,64 @@ var COURSE = [
         { id: 'L5-RECOVER-04', label: 'I saved a revised report, closed it, and opened it again from its folder.' },
         { id: 'L5-RECOVER-05', label: 'I checked my project against the checklist.' }
       ] },
+      { title: 'Homework: get ready for Lesson 3', tasks: [
+        { id: 'L5-PREP-01', label: 'I installed VS Code and opened it.' },
+        { id: 'L5-PREP-02', label: 'I installed Python and checked that it works.' }
+      ] },
       { title: 'Extra challenge: shortcuts', extension: true, tasks: [
         { id: 'L5-EXTRA-01', label: 'I made a shortcut and worked out how it differs from the real file.' }
       ] },
       { title: 'Extra challenge: newest isn\'t always best', extension: true, tasks: [
         { id: 'L5-EXTRA-02', label: 'I explained why the newest file isn\'t always the complete one.' }
+      ] }
+    ]
+  },
+  {
+    // Was the optional "Your coding toolkit". Its terminal tasks are retired: see the list above.
+    id: 'L4',
+    title: 'Working in VS Code',
+    unit: 'Foundations',
+    tab: 'VS Code',
+    sections: [
+      { title: 'Why a code editor?', tasks: [
+        { id: 'L4-TOOLS-01', label: 'I can say what a code editor does that Notepad and TextEdit don\'t.' }
+      ] },
+      { title: 'Install VS Code', tasks: [
+        { id: 'L4-INSTALL-01', label: 'I downloaded and installed VS Code.' },
+        { id: 'L4-INSTALL-02', label: 'I opened VS Code from where it is installed.' },
+        { id: 'L4-INSTALL-03', label: 'I installed the Python extension from Microsoft.' }
+      ] },
+      { title: 'Turn off the AI features', tasks: [
+        { id: 'L4-AI-01', label: 'I can point to where VS Code\'s AI features are.' },
+        { id: 'L4-AI-02', label: 'I turned off the AI features and checked that they are gone.' }
+      ] },
+      { title: 'Open a folder, not a file', tasks: [
+        { id: 'L4-FOLDER-01', label: 'I opened my Python folder in VS Code.' },
+        { id: 'L4-FOLDER-02', label: 'The file list in VS Code matches the folder on my computer.' }
+      ] },
+      { title: 'Saved or not?', tasks: [
+        { id: 'L4-SAVE-01', label: 'I can tell from a tab whether a file is saved.' },
+        { id: 'L4-SAVE-02', label: 'I found Auto Save and know whether it is on.' }
+      ] },
+      { title: 'Files and folders in VS Code', tasks: [
+        { id: 'L4-FILES-01', label: 'I made a file and a folder in VS Code, and found them in File Explorer or Finder.' },
+        { id: 'L4-FILES-02', label: 'I renamed and deleted a file in VS Code.' }
+      ] },
+      { title: 'Read the warnings', tasks: [
+        { id: 'L4-WARN-01', label: 'I fixed every mistake in broken.py.' }
+      ] },
+      { title: 'Finding your way', tasks: [
+        { id: 'L4-FIND-01', label: 'I used the Command Palette and searched the whole folder.' }
+      ] },
+      { title: 'Challenge: tidy the guessing game', tasks: [
+        { id: 'L4-CHALLENGE-02', label: 'I organised the guessing game folder using only VS Code.' },
+        { id: 'L4-CHALLENGE-03', label: 'With guess.py open, the Problems panel shows no problems.' }
+      ] },
+      { title: 'Extra challenge: run your program', extension: true, tasks: [
+        { id: 'L4-EXTRA-02', label: 'I ran the guessing game with the Run button and played it.' }
+      ] },
+      { title: 'Extra challenge: make it yours', extension: true, tasks: [
+        { id: 'L4-EXTRA-03', label: 'I changed the colour theme and the font size.' }
       ] }
     ]
   },
@@ -182,44 +241,6 @@ var COURSE = [
         { id: 'L3-EXTRA-01', label: 'I checked an AI answer against a reliable source and noted any differences.' }
       ] }
     ]
-  },
-  {
-    id: 'L4',
-    title: 'Your coding toolkit',
-    unit: 'Foundations',
-    tab: 'Toolkit (optional)',
-    optional: true,
-    sections: [
-      { title: 'Your toolkit', tasks: [
-        { id: 'L4-TOOLS-01', label: 'I can say what a code editor and a terminal are for.' }
-      ] },
-      { title: 'Install VS Code', tasks: [
-        { id: 'L4-INSTALL-01', label: 'I downloaded and installed VS Code.' },
-        { id: 'L4-INSTALL-02', label: 'I opened VS Code from where it is installed.' }
-      ] },
-      { title: 'Open a project folder', tasks: [
-        { id: 'L4-FOLDER-01', label: 'I opened my repaired bake sale folder in VS Code.' },
-        { id: 'L4-FOLDER-02', label: 'The file list in VS Code matches the folder on my computer.' }
-      ] },
-      { title: 'Edit and check', tasks: [
-        { id: 'L4-EDIT-01', label: 'I changed the heading in index.html and saved it.' },
-        { id: 'L4-EDIT-02', label: 'I reloaded the page in my browser and saw the change.' }
-      ] },
-      { title: 'Terminal: where am I?', tasks: [
-        { id: 'L4-TERM-01', label: 'I opened the terminal in VS Code.' },
-        { id: 'L4-TERM-02', label: 'I used pwd and ls, and the path matched what I expected.' }
-      ] },
-      { title: 'Terminal: moving around', tasks: [
-        { id: 'L4-TERM-03', label: 'I moved between folders with cd and cd ..' },
-        { id: 'L4-TERM-04', label: 'I made a folder with mkdir and found it in File Explorer or Finder.' }
-      ] },
-      { title: 'Terminal challenge', tasks: [
-        { id: 'L4-CHALLENGE-01', label: 'I completed the challenge using only the terminal.' }
-      ] },
-      { title: 'Extra challenge: build a project with commands', extension: true, tasks: [
-        { id: 'L4-EXTRA-01', label: 'I built a whole project folder structure using only commands.' }
-      ] }
-    ]
   }
 ];
 
@@ -239,7 +260,7 @@ function allTaskIds_() {
  * which never changes. A section without content shows a "still being written" note.
  */
 function courseWithContent_() {
-  var content = { L1: lesson1Content_(), L5: lesson5Content_() };
+  var content = { L1: lesson1Content_(), L5: lesson5Content_(), L4: lesson4Content_() };
   return COURSE.map(function (lesson) {
     var lessonContent = content[lesson.id] || {};
     return {

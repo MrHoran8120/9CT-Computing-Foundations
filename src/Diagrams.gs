@@ -204,6 +204,37 @@ function versionsDiagram_() {
     + '</svg>';
 }
 
+function vscodeDiagram_() {
+  var svg = svgOpen_(620, 330) + box_(10, 10, 600, 310);
+  // Activity bar
+  svg += box_(18, 18, 36, 270, 'sunk');
+  [40, 80, 120].forEach(function (y) { svg += '<rect x="26" y="' + (y - 10) + '" width="20" height="20" rx="3" class="d-file"/>'; });
+  svg += callout_(36, 160, 1);
+  // Explorer
+  svg += box_(60, 18, 160, 270, 'sunk') + label_(72, 40, 'PYTHON', 'heading');
+  svg += folder_(72, 50) + label_(104, 68, 'guess-game');
+  svg += fileIcon_(76, 84) + label_(104, 100, 'broken.py');
+  svg += fileIcon_(76, 116) + label_(104, 132, 'compare.py');
+  svg += callout_(208, 40, 2);
+  // Tabs
+  svg += box_(228, 18, 130, 30, 'accent-soft') + label_(240, 38, 'broken.py') + '<circle cx="342" cy="33" r="5" class="d-accent"/>';
+  svg += box_(362, 18, 130, 30, 'sunk') + label_(374, 38, 'compare.py') + label_(476, 38, '×', 'muted', 'middle');
+  svg += callout_(352, 62, 3);
+  // Code with a wavy underline
+  ['1', '2', '3'].forEach(function (n, i) { svg += label_(236, 82 + i * 24, n, 'muted'); });
+  // A misspelt name is usually a yellow warning in VS Code's default setup.
+  svg += label_(256, 82, 'name = input("Name? ")') + label_(256, 106, 'print("Hello, " + name)') + label_(256, 130, 'print(nmae)');
+  svg += '<path d="M290 136 q3 4 6 0 t6 0 t6 0 t6 0 t6 0" fill="none" stroke="#d29b00" stroke-width="2"/>';
+  svg += callout_(352, 130, 4);
+  // Problems panel
+  svg += box_(228, 170, 374, 118, 'sunk') + label_(240, 192, 'PROBLEMS', 'heading');
+  svg += '<circle cx="246" cy="214" r="5" fill="#d29b00"/>' + label_(258, 219, '"nmae" is not defined   Ln 3');
+  svg += callout_(590, 192, 5);
+  // Status bar
+  svg += box_(18, 294, 584, 20, 'accent');
+  return svg + '</svg>';
+}
+
 function storageDiagram_() {
   return svgOpen_(620, 180)
     + box_(20, 30, 230, 120, 'sunk') + label_(135, 56, 'Local', 'heading', 'middle')

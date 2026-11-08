@@ -2,7 +2,7 @@
 
 **Time:** 75 minutes. **Students need:** a charged laptop, their Lesson 1 folders if they have them, and the app open in its own tab.
 
-**Goal:** students can save work where they choose, tell versions of a file apart using evidence, and find where a file is really stored. Some students hand in an old version of their work. This lesson builds the habits that prevent it. Lesson 3 covers ZIP files and handing in.
+**Goal:** students can save work where they choose, tell versions of a file apart using evidence, and find where a file is really stored. Some students hand in an old version of their work. This lesson builds the habits that prevent it. Lesson 4 covers ZIP files and handing in.
 
 **Why Notepad and TextEdit:** they make students choose a name and a folder, and they show when there are unsaved changes, as VS Code does. Google Docs saves by itself and has no Save As, so it would skip the skill.
 
@@ -20,6 +20,8 @@ In the code, this lesson's ID is `L5`, because it was added after the others. St
 | 25 | Recovery challenge | Organise the garden project, then check it against the checklist |
 
 The recovery challenge gives goals, not clicks. Hold back from giving steps. Point students to the search box at the top of the app, or back to the section that taught the skill.
+
+**Homework for Lesson 3:** the last section, **Homework: get ready for Lesson 3**, has steps for installing VS Code and Python, with a tick for each. Set it at the end of the lesson. The ticks count towards Lesson 2's progress, so the Dashboard shows who is ready before Lesson 3 starts. Follow up with anyone who hasn't ticked both, especially students who aren't allowed to install apps on their laptop.
 
 There are two extra challenges for fast finishers: shortcuts, and why the newest file isn't always the complete one. They don't count towards progress or the Dashboard.
 

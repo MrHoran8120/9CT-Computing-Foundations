@@ -53,6 +53,7 @@ The first run downloads `clasp`, Google's tool for uploading Apps Script files, 
 | `Diagrams` | Script | `src/Diagrams.gs` |
 | `ExerciseFiles` | Script | `src/ExerciseFiles.gs` |
 | `Lesson1` | Script | `src/Lesson1.gs` |
+| `Lesson4` | Script | `src/Lesson4.gs` |
 | `Lesson5` | Script | `src/Lesson5.gs` |
 | `Index` | HTML | `src/Index.html` |
 | `Styles` | HTML | `src/Styles.html` |
@@ -136,7 +137,7 @@ The **Dashboard** tab of your Sheet shows a class's progress with bars, and upda
 1. Choose a class, or **All classes**, and how to sort it at the top of the tab. Sorting by **Name** avoids ranking students in front of the class, and sorting by **Class** keeps each class together.
 2. Click **View**, then **Full screen**, so only the Dashboard is on show.
 
-It shows first names and last initials only. Other tabs in the Sheet hold student emails, so stay on the Dashboard while it's on the board. Blocked students and extra challenges aren't included, and the optional lesson doesn't count towards **Overall**.
+It shows first names and last initials only. Other tabs in the Sheet hold student emails, so stay on the Dashboard while it's on the board. Blocked students and extra challenges aren't included, and any lesson marked as optional in `Course.gs` doesn't count towards **Overall**.
 
 You don't need to update the Dashboard when you change the course. It corrects its totals the next time a student opens the app. Only adding or removing a whole lesson needs **setupSheets** to run again.
 

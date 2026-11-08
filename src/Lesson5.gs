@@ -152,6 +152,14 @@ function lesson5Content_() {
       { type: 'choice', id: 'garden', question: 'Which report did you choose?', options: ['`garden report.txt`', '`Copy of garden report.txt`', '`garden report FINAL.txt`'], answer: 1, explain: 'It\'s the only one with week 4 results and a conclusion. The FINAL one is newer, but it stops after week 3.' }
     ],
 
+    'L5-PREP-01': [
+      { type: 'objective', text: 'Homework: before next lesson, install VS Code and Python, so you can start coding straight away.' },
+      { type: 'concept', text: '**VS Code** is the app you\'ll write code in. **Python** is what runs your code. Installing them at home is quicker than over school Wi-Fi, and you\'ll need both for your Python work this term.' },
+      { type: 'steps', title: 'Install VS Code', steps: installVsCodeSteps_() },
+      { type: 'steps', title: 'Install Python', steps: installPythonSteps_() },
+      { type: 'tip', text: 'Stuck, or not allowed to install apps on your laptop? Tick only what you finished, and tell your teacher at the start of next lesson.' }
+    ],
+
     'L5-EXTRA-01': [
       { type: 'objective', text: 'Finished early? Find out how a shortcut differs from the real file. This doesn\'t count towards your progress.' },
       { type: 'concept', text: { win: 'A **shortcut** points to a file somewhere else. It isn\'t the file itself.', mac: 'An **alias** points to a file somewhere else. It isn\'t the file itself.' } },

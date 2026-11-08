@@ -294,12 +294,70 @@ fs.mkdirSync(saveAndFind, { recursive: true });
 fs.writeFileSync(path.join(saveAndFind, 'practice-files.zip'), practiceZip);
 fs.writeFileSync(path.join(saveAndFind, 'garden-project.zip'), gardenZip);
 
+// "Working in VS Code" (lesson ID L4). Students open the Python folder in VS Code. broken.py and
+// guess-game/guess.py have deliberate mistakes that VS Code underlines without Python installed.
+// Nothing reads another file, so moving files around never breaks a program.
+const pythonFiles = {
+  'compare.py': { data: text([
+    '# Open this file in Notepad or TextEdit, then in VS Code. What looks different?',
+    'name = input("What is your name? ")',
+    'year = 9',
+    '',
+    'if year == 9:',
+    '    print("Welcome to Year 9, " + name + "!")',
+    'else:',
+    '    print("Hello, " + name + ".")'
+  ]), date: '2026-06-01' },
+  'broken.py': { data: text([
+    '# This program has three mistakes. Fix them one at a time.',
+    'name = input("What is your name? ")',
+    'print("Hello, " + name',
+    '',
+    'age = 14',
+    'if age > 12',
+    '    print("You are a teenager.")',
+    '',
+    'print("Nice to meet you, " + nmae)'
+  ]), date: '2026-06-02' },
+  'guess-game/guess.py': { data: text([
+    'import random',
+    '',
+    'secret = random.randint(1, 10)',
+    'guess = 0',
+    '',
+    'print("Guess my number between 1 and 10.")',
+    'while guess != secret',
+    '    guess = int(input("Your guess: "))',
+    '    if guess < secret:',
+    '        print("Too low.")',
+    '    elif guess > secret:',
+    '        pritn("Too high.")',
+    '',
+    'print("You got it!")'
+  ]), date: '2026-06-10' },
+  'guess-game/guess-old.py': { data: text([
+    'import random',
+    '',
+    'secret = random.randint(1, 10)',
+    'guess = int(input("Guess my number between 1 and 10: "))',
+    'print("The number was " + str(secret) + ".")'
+  ]), date: '2026-06-03' },
+  'guess-game/Untitled-1.py': { data: Buffer.alloc(0), date: '2026-06-08' },
+  'guess-game/high-scores.txt': { data: text(['High scores (fewest guesses)', 'Ava: 2', 'Noah: 3']), date: '2026-06-09' },
+  'guess-game/ideas.txt': { data: text(['Ideas', 'Count how many guesses it takes.', 'Let the player choose the range.']), date: '2026-06-05' }
+};
+const pythonZip = zipFolder('Python', pythonFiles);
+const vsCode = path.join(ROOT, 'exercise-files', 'vs-code');
+fs.mkdirSync(vsCode, { recursive: true });
+fs.writeFileSync(path.join(vsCode, 'python-starter.zip'), pythonZip);
+
 const served = {
   'test-file.txt': { mime: 'text/plain', data: testFile },
   'photo.jpg': { mime: 'image/jpeg', data: photo },
   'sams-files.zip': { mime: 'application/zip', data: samsZip },
   'practice-files.zip': { mime: 'application/zip', data: practiceZip },
-  'garden-project.zip': { mime: 'application/zip', data: gardenZip }
+  'garden-project.zip': { mime: 'application/zip', data: gardenZip },
+  'python-starter.zip': { mime: 'application/zip', data: pythonZip }
 };
 
 const entries = Object.keys(served).map((name) => `  '${name}': { mime: '${served[name].mime}', data: '${served[name].data.toString('base64')}' }`);

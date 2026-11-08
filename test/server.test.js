@@ -355,7 +355,7 @@ test('progress saved under a retired task ID is ignored', () => {
 test('every task ID is unique and follows the naming pattern', () => {
   const { ctx } = load();
   const ids = Array.from(ctx.allTaskIds_());
-  assert.strictEqual(ids.length, 76);
+  assert.strictEqual(ids.length, 83);
   assert.strictEqual(new Set(ids).size, ids.length);
   ids.forEach((id) => assert.match(id, /^L\d+-[A-Z]+-\d{2}$/));
 });
@@ -367,7 +367,7 @@ test('each lesson has the expected core tasks and extra challenges', () => {
     const core = sections.filter((s) => !s.extension);
     return [core.reduce((n, s) => n + s.tasks.length, 0), sections.length - core.length];
   });
-  assert.deepStrictEqual(counts, [[15, 6], [14, 2], [15, 1], [9, 1], [12, 1]]);
+  assert.deepStrictEqual(counts, [[15, 6], [16, 2], [16, 2], [15, 1], [9, 1]]);
 });
 
 test('extra challenges come after the core sections and are saved as extras', () => {
@@ -412,19 +412,21 @@ test('the answers to the "find files fast" challenge match Sam\'s real files', (
   assert.strictEqual(picked('find3'), '4');
 });
 
-test('only Lesson 4 is optional', () => {
+test('every lesson is core, and retired task IDs are never used again', () => {
   const { ctx } = load();
   const optional = Array.from(ctx.COURSE).filter((l) => l.optional).map((l) => l.id);
-  assert.deepStrictEqual(optional, ['L4']);
+  assert.deepStrictEqual(optional, []);
+  const ids = Array.from(ctx.allTaskIds_());
+  Array.from(ctx.RETIRED_IDS).forEach((id) => assert.ok(!ids.includes(id), id + ' is retired'));
 });
 
 test('extra challenges and Lesson 4 tasks save like any other', () => {
   const { ctx } = load();
   ctx.setTask('L1-EXTRA-01', true);
-  ctx.setTask('L4-TERM-01', true);
+  ctx.setTask('L4-AI-02', true);
   const progress = ctx.getBootstrap().progress;
   assert.strictEqual(progress['L1-EXTRA-01'], true);
-  assert.strictEqual(progress['L4-TERM-01'], true);
+  assert.strictEqual(progress['L4-AI-02'], true);
 });
 
 test('the app opens in its own tab and does not allow other sites to embed it', () => {
@@ -462,7 +464,7 @@ test('the Dashboard leaves out blocked students, extra challenges and optional l
   assert.match(data.L2, /D2:D=TRUE/);
   assert.match(data.E2, /"L1-EXTRA-\*"/);
   assert.match(data.J2, /E2:E\*\$U\$2\+F2:F\*\$V\$2\+G2:G\*\$W\$2\+H2:H\*\$X\$2/);
-  assert.ok(!/I2:I/.test(data.J2), 'the optional lesson is left out');
+  assert.match(data.J2, /I2:I\*\$Y\$2/, 'every core lesson counts');
 });
 
 test('the Dashboard can show every class, labelled and sorted by class', () => {
@@ -482,10 +484,10 @@ test('course changes correct the Dashboard totals when the next student loads th
   const { ctx, sheets } = load();
   ctx.setupSheets();
   const totals = () => Array.from(sheets['Dashboard data'].rows[1].slice(20, 25));
-  assert.deepStrictEqual(totals(), [15, 14, 15, 9, 12]);
+  assert.deepStrictEqual(totals(), [15, 16, 16, 15, 9]);
   ctx.COURSE[0].sections[0].tasks.push({ id: 'L1-APPS-99', label: 'New task' });
   ctx.getBootstrap();
-  assert.deepStrictEqual(totals(), [16, 14, 15, 9, 12]);
+  assert.deepStrictEqual(totals(), [16, 16, 16, 15, 9]);
 });
 
 test('a Dashboard problem never stops a student loading the app', () => {
@@ -499,11 +501,11 @@ test('a Dashboard problem never stops a student loading the app', () => {
 const flat = (value) => JSON.parse(JSON.stringify(value));
 const lessonOne = (ctx) => flat(ctx.courseWithContent_())[0];
 
-const written = (ctx) => flat(ctx.courseWithContent_()).filter((lesson) => ['L1', 'L5'].includes(lesson.id));
+const written = (ctx) => flat(ctx.courseWithContent_()).filter((lesson) => ['L1', 'L5', 'L4'].includes(lesson.id));
 
 test('every section of a written lesson has content, and every first task ID matches one', () => {
   const { ctx } = load();
-  [['L1', ctx.lesson1Content_()], ['L5', ctx.lesson5Content_()]].forEach(([id, content]) => {
+  [['L1', ctx.lesson1Content_()], ['L5', ctx.lesson5Content_()], ['L4', ctx.lesson4Content_()]].forEach(([id, content]) => {
     const lesson = written(ctx).find((item) => item.id === id);
     lesson.sections.forEach((section) => assert.ok(section.content, section.title));
     const known = lesson.sections.map((section) => section.tasks[0].id);
@@ -511,13 +513,13 @@ test('every section of a written lesson has content, and every first task ID mat
   });
 });
 
-test('lessons are shown in course order, with the new files lesson second, and all in one unit', () => {
+test('lessons are shown in course order, not ID order, and all in one unit', () => {
   const { ctx } = load();
   const lessons = flat(ctx.courseWithContent_());
-  assert.deepStrictEqual(lessons.map((lesson) => lesson.id), ['L1', 'L5', 'L2', 'L3', 'L4']);
+  assert.deepStrictEqual(lessons.map((lesson) => lesson.id), ['L1', 'L5', 'L4', 'L2', 'L3']);
   lessons.forEach((lesson) => assert.strictEqual(lesson.unit, 'Foundations'));
   assert.deepStrictEqual(Array.from(ctx.lessonTotals_()).map((lesson) => lesson.title),
-    ['Lesson 1', 'Lesson 2', 'Lesson 3', 'Lesson 4', 'Lesson 5 (optional)']);
+    ['Lesson 1', 'Lesson 2', 'Lesson 3', 'Lesson 4', 'Lesson 5']);
 });
 
 test('Dashboard columns past Z get the right letters', () => {
@@ -568,7 +570,7 @@ test('drawings are complete and hold no scripts', () => {
   const { ctx } = load();
   [ctx.appFileDiagram_(), ctx.olderWindowsExtensionsDiagram_(), ctx.windowDiagram_('win'), ctx.windowDiagram_('mac'), ctx.pathDiagram_('win'), ctx.pathDiagram_('mac'),
     ctx.copyMoveDiagram_(), ctx.extensionDiagram_(), ctx.storageDiagram_(), ctx.selectDiagram_('win'), ctx.selectDiagram_('mac'),
-    ctx.saveDialogDiagram_('win'), ctx.saveDialogDiagram_('mac'), ctx.versionsDiagram_()].forEach((svg) => {
+    ctx.saveDialogDiagram_('win'), ctx.saveDialogDiagram_('mac'), ctx.versionsDiagram_(), ctx.vscodeDiagram_()].forEach((svg) => {
     assert.match(svg, /^<svg .*<\/svg>$/s);
     assert.ok(!/<script|on[a-z]+=|href=/i.test(svg));
     assert.ok(!/undefined|NaN/.test(svg));
@@ -666,4 +668,27 @@ test('only one garden report has all five parts, and it is not the newest', () =
   assert.strictEqual(Object.keys(files).filter((name) => /\.png$/.test(name)).length, 2, 'two images to move together');
   const blocks = flat(ctx.lesson5Content_())['L5-RECOVER-01'];
   assert.strictEqual(picked(blocks, 'garden'), '`Copy of garden report.txt`');
+});
+
+test('the Python starter files have the mistakes the VS Code lesson describes', () => {
+  const { ctx } = load();
+  const files = fileFrom(ctx, 'python-starter.zip');
+  const read = (name) => files['Python/' + name].data.toString();
+  assert.match(read('broken.py'), /print\("Hello, " \+ name\r?\n/, 'an unclosed bracket');
+  assert.match(read('broken.py'), /if age > 12\r?\n/, 'a missing colon');
+  assert.match(read('broken.py'), /nmae/, 'a misspelt name');
+  assert.match(read('guess-game/guess.py'), /while guess != secret\r?\n/);
+  assert.match(read('guess-game/guess.py'), /pritn/);
+  assert.strictEqual(files['Python/guess-game/Untitled-1.py'].data.length, 0, 'the file to delete is empty');
+  const game = Object.keys(files).filter((name) => name.startsWith('Python/guess-game/')).map((name) => name.split('/').pop()).sort();
+  assert.deepStrictEqual(game, ['Untitled-1.py', 'guess-old.py', 'guess.py', 'high-scores.txt', 'ideas.txt']);
+  Object.keys(files).filter((name) => name.endsWith('.py')).forEach((name) => {
+    assert.ok(!/open\(|import (?!random)/.test(files[name].data.toString()), name + ' reads no other file, so moving files is safe');
+  });
+});
+
+test('the VS Code lesson turns off AI features with the documented setting', () => {
+  const { ctx } = load();
+  const text = JSON.stringify(flat(ctx.lesson4Content_())['L4-AI-01']);
+  assert.match(text, /chat\.disableAIFeatures/);
 });

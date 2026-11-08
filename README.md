@@ -1,12 +1,12 @@
 # Computing Foundations
 
-An interactive introductory computing course for Year 9 students, with four core lessons and one optional lesson, each 75 minutes. Together they make the **Foundations** unit:
+An interactive introductory computing course for Year 9 students, with five core lessons, each 75 minutes. Together they make the **Foundations** unit:
 
 1. **Computer fundamentals:** files, folders, paths, file extensions, and local and cloud storage.
 2. **Taking control of your files:** selecting several files, saving on purpose, telling versions apart, and finding missing work.
-3. **ZIP files and submission:** packaging, extracting, repairing and handing in a complete project.
-4. **AI and assessment:** AI permission levels, explaining your own work, and acknowledging AI use.
-5. **Your coding toolkit (optional):** installing VS Code, working in a project folder and using the terminal.
+3. **Working in VS Code:** installing VS Code for Python, opening a project folder, saving, managing files, reading warnings, and turning off the AI features.
+4. **ZIP files and submission:** packaging, extracting, repairing and handing in a complete project.
+5. **AI and assessment:** AI permission levels, explaining your own work, and acknowledging AI use.
 
 Each lesson also has at least one extra challenge for students who finish early.
 
