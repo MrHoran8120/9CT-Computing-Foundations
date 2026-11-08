@@ -1,6 +1,6 @@
 <script>
   (function () {
-    var state = { student: null, course: [], progress: {}, lesson: 0, section: 0, saving: {}, answers: {} };
+    var state = { student: null, course: [], progress: {}, lesson: 0, section: 0, saving: {}, answers: {}, search: '', highlight: null };
     var app = document.getElementById('app');
 
     /* Builds an element. Text always goes in as text, never as HTML. */
@@ -8,9 +8,7 @@
       var node = document.createElement(tag);
       Object.keys(attrs || {}).forEach(function (key) {
         if (key === 'text') node.textContent = attrs[key];
-        else if (key === 'onclick') node.addEventListener('click', attrs[key]);
-        else if (key === 'onchange') node.addEventListener('change', attrs[key]);
-        else if (key === 'onsubmit') node.addEventListener('submit', attrs[key]);
+        else if (key.indexOf('on') === 0 && typeof attrs[key] === 'function') node.addEventListener(key.slice(2), attrs[key]);
         else if (key === 'class') node.className = attrs[key];
         else if (key === 'checked' || key === 'disabled') node[key] = attrs[key];
         else node.setAttribute(key, attrs[key]);
@@ -345,10 +343,140 @@
       ]);
     }
 
+    /* Search runs in the browser over the course text already loaded. Answers and explanations
+       are left out, so searching can't give away an activity. */
+    function plain(value) {
+      return String(forOs(value) || '').replace(/\*\*|`|\[\[|\]\]/g, '');
+    }
+
+    function sectionText(section) {
+      var parts = [];
+      (section.content || []).forEach(function (block) {
+        if (block.only && block.only !== state.student.os) return;
+        [block.text, block.title, block.intro, block.caption, block.prompt, block.question, block.label].forEach(function (value) {
+          if (value) parts.push(plain(value));
+        });
+        (block.steps || []).forEach(function (step) { parts.push(plain(step)); });
+        (block.rows || []).forEach(function (row) { parts.push(plain(row[0]) + ': ' + plain(row[1])); });
+        (block.options || []).forEach(function (option) { parts.push(plain(option)); });
+        (block.items || []).forEach(function (item) { parts.push(plain(item.text)); });
+      });
+      section.tasks.forEach(function (task) { parts.push(task.label); });
+      return parts.filter(function (part) { return part; });
+    }
+
+    /* Words in the search, shortened so "paths" also finds "path". */
+    function searchWords(query) {
+      return query.toLowerCase().split(/[^a-z0-9.]+/).filter(function (word) { return word.length > 1; })
+        .map(function (word) { return word.length > 3 ? word.replace(/(es|s)$/, '') : word; })
+        .filter(function (word, i, all) { return all.indexOf(word) === i; });
+    }
+
+    function wordPattern(words) {
+      // A word starting with a dot, such as .pdf, can follow a letter, as in scan0001.pdf.
+      return new RegExp('(^|[^a-z0-9]|(?=\\.))(' + words.map(function (word) {
+        return word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      }).join('|') + ')', 'gi');
+    }
+
+    function findSections(query) {
+      var words = searchWords(query);
+      if (!words.length) return [];
+      var results = [];
+      state.course.forEach(function (lesson, l) {
+        lesson.sections.forEach(function (section, s) {
+          var parts = sectionText(section);
+          var all = (section.title + '\n' + parts.join('\n')).toLowerCase();
+          var everyWord = words.every(function (word) { return wordPattern([word]).test(all); });
+          if (!everyWord) return;
+          var titleHits = section.title.toLowerCase().match(wordPattern(words)) || [];
+          var hits = all.match(wordPattern(words)) || [];
+          var first = parts.find(function (part) { return wordPattern(words).test(part.toLowerCase()); });
+          results.push({ lesson: l, section: s, score: titleHits.length * 10 + hits.length, snippet: first || '' });
+        });
+      });
+      return results.sort(function (a, b) { return b.score - a.score || a.lesson - b.lesson || a.section - b.section; });
+    }
+
+    /* Adds text to a node, wrapping the searched words in <mark>. Text always goes in as text. */
+    function addMarked(node, text, words) {
+      var pattern = wordPattern(words);
+      var last = 0;
+      var match;
+      while ((match = pattern.exec(text))) {
+        var start = match.index + match[1].length;
+        node.appendChild(document.createTextNode(text.slice(last, start)));
+        node.appendChild(el('mark', { text: text.slice(start, start + match[2].length) }));
+        last = start + match[2].length;
+      }
+      node.appendChild(document.createTextNode(text.slice(last)));
+      return node;
+    }
+
+    function snippet(text, words) {
+      var match = wordPattern(words).exec(text.toLowerCase());
+      var from = match ? Math.max(0, match.index - 50) : 0;
+      if (from > 0) from = text.indexOf(' ', from) + 1 || from;
+      var cut = text.slice(from, from + 160);
+      if (from + 160 < text.length) cut = cut.replace(/[\s.,]+$/, '') + '…';
+      return (from > 0 ? '…' : '') + cut;
+    }
+
+    function renderResults() {
+      var query = state.search.trim();
+      var words = searchWords(query);
+      var results = findSections(query);
+      var heading = results.length
+        ? results.length + (results.length === 1 ? ' section matches' : ' sections match') + ' "' + query + '"'
+        : words.length ? 'Nothing matches "' + query + '"' : 'Type a word to search';
+      var list = el('ul', { class: 'results' }, results.map(function (result) {
+        var lesson = state.course[result.lesson];
+        var section = lesson.sections[result.section];
+        return el('li', {}, [el('button', {
+          type: 'button', class: 'result ' + lesson.id,
+          onclick: function () { openResult(result, words); }
+        }, [
+          el('span', { class: 'eyebrow', text: (result.lesson + 1) + '. ' + lesson.tab + (section.extension ? ' · extra challenge' : '') }),
+          addMarked(el('strong', {}), section.title, words),
+          result.snippet ? addMarked(el('span', { class: 'result-text' }), snippet(result.snippet, words), words) : null
+        ])]);
+      }));
+      return el('div', { class: 'card' }, [
+        el('h2', { id: 'results-heading', text: heading, 'aria-live': 'polite' }),
+        results.length ? list : (words.length ? el('p', { text: 'Try a shorter word, or check the spelling. Some lessons are still being written.' }) : null)
+      ]);
+    }
+
+    function openResult(result, words) {
+      state.lesson = result.lesson;
+      state.section = result.section;
+      state.search = '';
+      state.highlight = words;
+      renderCourse();
+      var first = document.querySelector('.main mark');
+      if (first) first.scrollIntoView({ block: 'center' }); else window.scrollTo(0, 0);
+    }
+
+    /* Marks the searched words in the section that was opened from a search. */
+    function highlightIn(node, words) {
+      var walker = document.createTreeWalker(node, NodeFilter.SHOW_TEXT);
+      var found = [];
+      while (walker.nextNode()) {
+        var parent = walker.currentNode.parentNode;
+        if (!parent.closest('svg, select, option, button')) found.push(walker.currentNode);
+      }
+      found.forEach(function (textNode) {
+        if (!wordPattern(words).test(textNode.nodeValue.toLowerCase())) return;
+        textNode.parentNode.replaceChild(addMarked(document.createDocumentFragment(), textNode.nodeValue, words), textNode);
+      });
+    }
+
     function renderCourse() {
       var lesson = state.course[state.lesson];
       var section = lesson.sections[state.section];
       var tasks = lessonTasks(lesson);
+      var highlight = state.highlight;
+      state.highlight = null;
       var doneCount = tasks.filter(function (task) { return state.progress[task.id]; }).length;
       var status = el('p', { class: 'status', role: 'status' });
 
@@ -365,7 +493,7 @@
         state.course.map(function (item, i) {
           var attrs = {
             type: 'button', class: 'lesson-tab ' + item.id, text: (i + 1) + '. ' + item.tab,
-            onclick: function () { state.lesson = i; state.section = 0; renderCourse(); }
+            onclick: function () { state.lesson = i; state.section = 0; state.search = ''; renderCourse(); }
           };
           if (i === state.lesson) attrs['aria-current'] = 'page';
           return el('button', attrs);
@@ -374,7 +502,7 @@
       var sectionList = el('ol', { class: 'section-list' }, lesson.sections.map(function (item, i) {
         var attrs = {
           type: 'button', text: item.title, class: isSectionDone(item) ? 'done' : '',
-          onclick: function () { state.section = i; renderCourse(); }
+          onclick: function () { state.section = i; state.search = ''; renderCourse(); }
         };
         if (i === state.section) attrs['aria-current'] = 'step';
         return el('li', {}, [el('button', attrs)]);
@@ -395,39 +523,76 @@
       var isLast = state.section === lesson.sections.length - 1;
       var next = isLast ? null : el('button', {
         type: 'button', class: 'btn', text: 'Next: ' + lesson.sections[state.section + 1].title,
-        onclick: function () { state.section += 1; renderCourse(); window.scrollTo(0, 0); }
+        onclick: function () { state.section += 1; state.search = ''; renderCourse(); window.scrollTo(0, 0); }
       });
+
+      var sectionCard = el('div', { class: 'card' }, [
+        el('span', { class: 'eyebrow', text: section.extension
+          ? 'If you finish early'
+          : 'Section ' + (state.section + 1) + ' of ' + lesson.sections.filter(function (item) { return !item.extension; }).length }),
+        el('h2', { text: section.title }),
+        renderContent(section),
+        taskList,
+        el('div', { class: 'foot' }, [status, next])
+      ]);
+      var main = el('main', { class: 'main', id: 'search-results' });
+      var layout = el('div', { class: 'layout' });
+
+      /* Typing only redraws the results, so the search box keeps its place. On a narrow
+         screen the section list is hidden while searching, so the results are in view. */
+      function showMain() {
+        var searching = !!state.search.trim();
+        main.replaceChildren(searching ? renderResults() : sectionCard);
+        layout.classList.toggle('searching', searching);
+      }
+      var searchBox = el('input', {
+        type: 'search', id: 'search', value: state.search, placeholder: 'Search the course',
+        autocomplete: 'off', 'aria-label': 'Search the course', 'aria-controls': 'search-results',
+        oninput: function (event) {
+          state.search = event.target.value;
+          showMain();
+        },
+        onkeydown: function (event) {
+          if (event.key === 'Escape' && state.search) {
+            event.preventDefault();
+            event.target.value = state.search = '';
+            showMain();
+          }
+        }
+      });
+      var search = el('form', {
+        class: 'search', role: 'search',
+        onsubmit: function (event) {
+          event.preventDefault();
+          var results = findSections(state.search.trim());
+          if (results.length) openResult(results[0], searchWords(state.search.trim()));
+        }
+      }, [searchBox]);
 
       app.replaceChildren(el('div', { class: lesson.id }, [
         el('header', { class: 'topbar' }, [
           el('span', { class: 'brand', text: 'Computing Foundations' }),
           el('span', { class: 'who', text: state.student.name + ', ' + state.student.className }),
+          search,
           osSwitch,
           lessonTabs
         ]),
-        el('div', { class: 'layout' }, [
-          el('aside', { class: 'side' }, [
-            el('div', {}, [
-              el('strong', { id: 'count', text: doneCount + ' of ' + tasks.length + ' tasks' }),
-              el('div', { class: 'meter' }, [
-                el('div', { id: 'meter', style: 'width:' + Math.round(doneCount / tasks.length * 100) + '%' })
-              ])
-            ]),
-            sectionList
-          ]),
-          el('main', { class: 'main' }, [
-            el('div', { class: 'card' }, [
-              el('span', { class: 'eyebrow', text: section.extension
-                ? 'If you finish early'
-                : 'Section ' + (state.section + 1) + ' of ' + lesson.sections.filter(function (item) { return !item.extension; }).length }),
-              el('h2', { text: section.title }),
-              renderContent(section),
-              taskList,
-              el('div', { class: 'foot' }, [status, next])
-            ])
-          ])
-        ])
+        layout
       ]));
+      layout.replaceChildren(
+        el('aside', { class: 'side' }, [
+          el('div', {}, [
+            el('strong', { id: 'count', text: doneCount + ' of ' + tasks.length + ' tasks' }),
+            el('div', { class: 'meter' }, [
+              el('div', { id: 'meter', style: 'width:' + Math.round(doneCount / tasks.length * 100) + '%' })
+            ])
+          ]),
+          sectionList
+        ]),
+        main
+      );
+      showMain();
+      if (highlight) highlightIn(sectionCard.querySelector('.content') || sectionCard, highlight);
     }
 
     function changeOs(os, status) {

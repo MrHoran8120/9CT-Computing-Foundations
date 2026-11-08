@@ -9,7 +9,7 @@ An interactive introductory computing course for Year 9 students, with three cor
 
 Each lesson also has at least one extra challenge for students who finish early.
 
-Students work through one web app, choosing Windows or Mac instructions. Their progress saves to a private Google Sheet that the teacher uses as a dashboard.
+Students work through one web app, choosing Windows or Mac instructions, and can search the whole course to find where something was taught. Their progress saves to a private Google Sheet that the teacher uses as a dashboard.
 
 **Status:** in development. The app foundation is in place and lesson content is still being written. It hasn't been deployed or tested with real student accounts yet.
 

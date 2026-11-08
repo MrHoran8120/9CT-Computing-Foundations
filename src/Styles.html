@@ -31,6 +31,15 @@
   .os-switch { margin-left: auto; display: inline-flex; border: 1.5px solid var(--acc); border-radius: 7px; overflow: hidden; }
   .os-switch button { border: 0; background: transparent; color: var(--acc); padding: 3px 13px; font-size: .87rem; font-weight: 700; }
   .os-switch button[aria-pressed="true"] { background: var(--acc); color: var(--on); }
+  .search { margin-left: auto; flex: 0 1 260px; min-width: 150px; }
+  .search input { font: inherit; font-size: .9rem; color: inherit; background: var(--sunk); border: 1.5px solid var(--line); border-radius: 7px; padding: 4px 10px; width: 100%; }
+  .search input:focus { border-color: var(--acc); background: var(--surface); }
+  .search + .os-switch { margin-left: 0; }
+  mark { background: color-mix(in srgb, #f5c400 45%, var(--surface)); color: inherit; border-radius: 3px; padding: 0 1px; }
+  .results { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+  .result { width: 100%; text-align: left; background: var(--surface); border: 1.5px solid var(--line); border-left: 5px solid var(--acc); border-radius: 7px; padding: 10px 13px; display: grid; gap: 3px; }
+  .result:hover { border-color: var(--acc); }
+  .result-text { color: var(--muted); font-size: .92rem; overflow-wrap: anywhere; }
   .lesson-tabs { flex-basis: 100%; display: flex; gap: 3px; overflow-x: auto; }
   .lesson-tab { flex: none; border: 0; padding: 6px 14px; border-radius: 7px 7px 0 0; background: var(--sunk); color: var(--muted); font-weight: 700; font-size: .9rem; }
   .lesson-tab[aria-current="page"] { background: var(--acc); color: var(--on); }
@@ -133,6 +142,7 @@
   @media (max-width: 600px) {
     .layout { grid-template-columns: minmax(0, 1fr); }
     .side { padding-bottom: 0; }
+    .searching .side { display: none; }
   }
   @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>
