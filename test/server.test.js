@@ -606,7 +606,7 @@ test('students turn on file extensions before they first download or rename a fi
 
 test('lesson content is valid for both Windows and Mac', () => {
   const { ctx } = load();
-  const blockTypes = ['objective', 'concept', 'tip', 'diagram', 'steps', 'keys', 'download', 'choice', 'match', 'tree'];
+  const blockTypes = ['objective', 'concept', 'tip', 'diagram', 'steps', 'keys', 'download', 'choice', 'match', 'tree', 'tick'];
   const bothOrShared = (value, where) => {
     if (value && typeof value === 'object') {
       assert.ok(value.win && value.mac, where + ' needs both Windows and Mac');
@@ -773,4 +773,15 @@ test('the Dashboard headings are formulas that show plain words', () => {
   Object.entries(sheets.Dashboard.cells).filter(([cell]) => /^[B-Z]+(9|10)$/.test(cell)).forEach(([cell, value]) => {
     assert.ok(value === '' || String(value).startsWith('='), cell + ' is written as a formula');
   });
+});
+
+test('each checkpoint belongs to a task in its own section, and appears only once', () => {
+  const { ctx } = load();
+  written(ctx).forEach((lesson) => lesson.sections.forEach((section) => {
+    const ids = section.tasks.map((task) => task.id);
+    const placed = section.content.filter((block) => block.type === 'tick').map((block) => block.task);
+    placed.forEach((id) => assert.ok(ids.includes(id), section.title + ': ' + id + ' is not a task here'));
+    assert.strictEqual(new Set(placed).size, placed.length, section.title + ' places a tick twice');
+    if (placed.length) assert.strictEqual(placed.length, ids.length, section.title + ' places some ticks but not all');
+  }));
 });

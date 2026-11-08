@@ -185,7 +185,62 @@
       if (block.type === 'choice') return renderChoice(block);
       if (block.type === 'match') return renderMatch(block);
       if (block.type === 'tree') return renderTree(block);
+      if (block.type === 'tick') return currentCheckpoint ? currentCheckpoint(block.task) : null;
       return null;
+    }
+
+    /* Set by renderCourse for the section on screen, so lesson content can place tick boxes. */
+    var currentCheckpoint = null;
+
+    function tickMark() {
+      var ns = 'http://www.w3.org/2000/svg';
+      var svg = document.createElementNS(ns, 'svg');
+      svg.setAttribute('viewBox', '0 0 24 24');
+      svg.setAttribute('aria-hidden', 'true');
+      var path = document.createElementNS(ns, 'path');
+      path.setAttribute('d', 'M5 12.5l4.5 4.5L19 7.5');
+      svg.appendChild(path);
+      return svg;
+    }
+
+    /* One tick box, in the same style wherever it appears. */
+    function checkpoint(task, tasks) {
+      var done = !!state.progress[task.id];
+      var note = el('span', { class: 'cp-status', id: 'status-' + task.id, role: 'status' });
+      return el('div', { class: 'checkpoint' + (done ? ' done' : ''), id: 'cp-' + task.id }, [
+        el('label', {}, [
+          el('input', {
+            type: 'checkbox', id: task.id, checked: done, disabled: !!state.saving[task.id],
+            onchange: function (event) { saveTask(task, event.target, note, tasks); }
+          }),
+          el('span', { class: 'box' }, [tickMark()]),
+          el('span', { class: 'cp-text' }, [
+            el('span', { class: 'kicker', text: done ? 'Checkpoint · Done' : 'Checkpoint' }),
+            el('span', { class: 'cp-label', text: task.label })
+          ])
+        ]),
+        note
+      ]);
+    }
+
+    /* Repeats every tick in the section, so none are missed. Each one jumps to its checkpoint. */
+    function sectionChecklist(section) {
+      return el('div', { class: 'checklist' }, [
+        el('h3', { text: 'Section checklist' }),
+        el('ul', {}, section.tasks.map(function (task) {
+          var done = !!state.progress[task.id];
+          return el('li', { class: done ? 'done' : '' }, [el('button', {
+            type: 'button',
+            onclick: function () {
+              var target = document.getElementById('cp-' + task.id);
+              if (!target) return;
+              target.scrollIntoView({ block: 'center', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+              document.getElementById(task.id).focus({ preventScroll: true });
+            }
+          }, [el('span', { class: 'mini' }, [tickMark()]), el('span', { text: task.label }), done ? el('span', { class: 'sr-only', text: ' (done)' }) : null])]);
+        })),
+        el('p', { class: 'hint', text: 'Missed one? Click it to jump back to its checkpoint.' })
+      ]);
     }
 
     /* Diagrams are fixed drawings from Diagrams.gs. They contain no student or browser input. */
@@ -499,26 +554,53 @@
           return el('button', attrs);
         }));
 
-      var sectionList = el('ol', { class: 'section-list' }, lesson.sections.map(function (item, i) {
+      // The section list, split into what everyone finishes and the optional extra challenges.
+      var sectionItem = function (item, i) {
+        var title = item.extension ? item.title.replace(/^Extra challenge:\s*/i, '') : item.title;
         var attrs = {
-          type: 'button', text: item.title, class: isSectionDone(item) ? 'done' : '',
+          type: 'button', text: title.charAt(0).toUpperCase() + title.slice(1), class: isSectionDone(item) ? 'done' : '',
           onclick: function () { state.section = i; state.search = ''; renderCourse(); }
         };
         if (i === state.section) attrs['aria-current'] = 'step';
         return el('li', {}, [el('button', attrs)]);
-      }));
+      };
+      var coreItems = [], extraItems = [], coreDone = 0, coreTotal = 0;
+      lesson.sections.forEach(function (item, i) {
+        if (item.extension) { extraItems.push(sectionItem(item, i)); return; }
+        coreItems.push(sectionItem(item, i));
+        coreTotal += 1;
+        if (isSectionDone(item)) coreDone += 1;
+      });
+      var sectionGroups = [el('div', { class: 'group core' }, [
+        el('p', { class: 'group-head' }, [
+          el('span', { text: 'Everyone finishes' }),
+          el('span', { class: 'group-count', text: coreDone + ' of ' + coreTotal })
+        ]),
+        el('ol', { class: 'section-list' }, coreItems)
+      ])];
+      if (extraItems.length) {
+        sectionGroups.push(el('div', { class: 'group extra' }, [
+          el('p', { class: 'group-head' }, [el('span', { text: 'Extra challenges' })]),
+          el('p', { class: 'group-note', text: 'Optional. Try these if you finish early, or in your own time.' }),
+          el('ul', { class: 'section-list' }, extraItems)
+        ]));
+      }
 
-      var taskList = el('div', { class: 'tasks' }, section.tasks.map(function (task) {
-        return el('label', { class: 'task' }, [
-          el('input', {
-            type: 'checkbox', id: task.id,
-            checked: !!state.progress[task.id],
-            disabled: !!state.saving[task.id],
-            onchange: function (event) { saveTask(task, event.target, status, tasks); }
-          }),
-          el('span', { text: task.label })
-        ]);
-      }));
+      // Checkpoints: lesson content places tick boxes after their activities. Any task it
+      // doesn't place goes at the bottom. When some are placed, a checklist repeats them all.
+      var placed = {};
+      (section.content || []).forEach(function (block) {
+        if (block.type === 'tick' && (!block.only || block.only === state.student.os)) placed[block.task] = true;
+      });
+      currentCheckpoint = function (taskId) {
+        var task = section.tasks.find(function (item) { return item.id === taskId; });
+        return task ? checkpoint(task, tasks) : null;
+      };
+      var unplaced = section.tasks.filter(function (task) { return !placed[task.id]; });
+      var sectionTicked = section.tasks.filter(function (task) { return state.progress[task.id]; }).length;
+      var bottom = [];
+      if (unplaced.length) bottom.push(el('div', { class: 'tasks' }, unplaced.map(function (task) { return checkpoint(task, tasks); })));
+      if (unplaced.length < section.tasks.length) bottom.push(sectionChecklist(section));
 
       var isLast = state.section === lesson.sections.length - 1;
       var next = isLast ? null : el('button', {
@@ -527,14 +609,18 @@
       });
 
       var sectionCard = el('div', { class: 'card' }, [
-        el('span', { class: 'eyebrow', text: section.extension
-          ? 'If you finish early'
-          : 'Section ' + (state.section + 1) + ' of ' + lesson.sections.filter(function (item) { return !item.extension; }).length }),
+        el('div', { class: 'card-head' }, [
+          el('span', { class: 'eyebrow', text: section.extension
+            ? 'If you finish early'
+            : 'Section ' + (state.section + 1) + ' of ' + coreTotal }),
+          section.tasks.length > 1 ? el('span', {
+            class: 'chip' + (sectionTicked === section.tasks.length ? ' all' : ''),
+            text: sectionTicked === section.tasks.length ? 'All ' + sectionTicked + ' ticked' : sectionTicked + ' of ' + section.tasks.length + ' ticked'
+          }) : null
+        ]),
         el('h2', { text: section.title }),
-        renderContent(section),
-        taskList,
-        el('div', { class: 'foot' }, [status, next])
-      ]);
+        renderContent(section)
+      ].concat(bottom).concat([el('div', { class: 'foot' }, [status, next])]));
       var main = el('main', { class: 'main', id: 'search-results' });
       var layout = el('div', { class: 'layout' });
 
@@ -586,9 +672,8 @@
             el('div', { class: 'meter' }, [
               el('div', { id: 'meter', style: 'width:' + Math.round(doneCount / tasks.length * 100) + '%' })
             ])
-          ]),
-          sectionList
-        ]),
+          ])
+        ].concat(sectionGroups)),
         main
       );
       showMain();
@@ -615,7 +700,8 @@
       var wanted = box.checked;
       state.saving[task.id] = true;
       box.disabled = true;
-      status.className = 'status busy';
+      // The message appears on the checkpoint itself, next to the tick box.
+      status.className = 'cp-status busy';
       status.textContent = 'Saving…';
       call('setTask', [task.id, wanted], function () {
         delete state.saving[task.id];
@@ -624,14 +710,18 @@
         renderCourse();
         var saved = document.getElementById(task.id);
         if (saved) saved.focus({ preventScroll: true });
-        var fresh = document.querySelector('.foot .status');
-        fresh.className = 'status ok';
-        fresh.textContent = 'Saved';
+        var card = document.getElementById('cp-' + task.id);
+        if (card && wanted) card.classList.add('pop');
+        var fresh = document.getElementById('status-' + task.id);
+        if (fresh) {
+          fresh.className = 'cp-status ok';
+          fresh.textContent = 'Saved';
+        }
       }, function () {
         delete state.saving[task.id];
         box.checked = !wanted;
         box.disabled = false;
-        status.className = 'status bad';
+        status.className = 'cp-status bad';
         status.textContent = 'That didn\'t save, so your tick has been undone. Please try again.';
       });
     }

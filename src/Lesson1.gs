@@ -41,6 +41,7 @@ function lesson1Content_() {
         { win: 'Click **Documents** in the left pane.', mac: 'Click **Documents** in the sidebar.' }
       ] },
       { type: 'tip', text: { win: 'You can also open File Explorer by clicking the folder icon on the taskbar, but the shortcut works from anywhere.', mac: 'You can open any app from the Dock or with Spotlight. The Dock is handy for apps you use often. Spotlight also finds apps that aren\'t in the Dock: press [[Command]] + [[Space]], type the first few letters of the name, then press [[Return]].' } },
+      { type: 'tick', task: 'L1-NAV-01' },
       { type: 'steps', title: 'Show the full names of your files', intro: 'Computers often hide the end of a file\'s name. Turn this on now, so that what you see matches this course.', steps: [
         { win: 'In File Explorer, click **View** at the top.', mac: 'Click **Finder** in the menu bar, then **Settings**.' },
         { win: 'Point to **Show**.', mac: 'Click **Advanced**.' },
@@ -48,13 +49,15 @@ function lesson1Content_() {
       ] },
       { type: 'tip', text: { win: 'On older versions of Windows, the top of File Explorer looks different. Use the picture below instead.', mac: 'On older versions of macOS, the menu item is called **Preferences** instead of Settings.' } },
       { type: 'diagram', only: 'win', svg: olderWindowsExtensionsDiagram_(), alt: 'A drawing of File Explorer on older Windows. 1: click the View tab. 2: in the Show/hide group, tick File name extensions.', caption: 'Older Windows only. **1** Click the **View** tab. **2** Tick **File name extensions**.' },
+      { type: 'tick', task: 'L1-EXT-01' },
       { type: 'steps', title: 'Download a file and find it', steps: [
         'Click the button below.',
         'Go back to **Downloads** and look for `test-file.txt`. Newest files are often at the top.',
         'Double-click the file to open it, then read the message and close it.'
       ] },
       { type: 'download', file: 'test-file.txt', label: 'Download test-file.txt' },
-      { type: 'tip', text: 'Can\'t see it? Your browser may have asked where to save it, or added a number to the name, such as `test-file (1).txt`. That happens when you download a file twice.' }
+      { type: 'tip', text: 'Can\'t see it? Your browser may have asked where to save it, or added a number to the name, such as `test-file (1).txt`. That happens when you download a file twice.' },
+      { type: 'tick', task: 'L1-NAV-02' }
     ],
 
     'L1-PATH-01': [
@@ -77,11 +80,13 @@ function lesson1Content_() {
         'Write the path in your book, or anywhere your teacher asks.'
       ] },
       { type: 'tip', text: { win: 'If your path includes `OneDrive`, your Documents or Downloads folder is being saved to the cloud. That\'s normal, and you will learn about it soon. Older Windows versions may need [[Shift]] held while you right-click.', mac: 'Your own name appears in the path instead of `you`. That\'s the name of your account on this Mac.' } },
+      { type: 'tick', task: 'L1-PATH-01' },
       { type: 'choice', id: 'path', question: 'Sam saved `poem.docx` inside a folder called English, inside Documents. Which path is correct?', options: [
         { win: 'C:\\Users\\sam\\English\\Documents\\poem.docx', mac: '/Users/sam/English/Documents/poem.docx' },
         { win: 'C:\\Users\\sam\\Documents\\English\\poem.docx', mac: '/Users/sam/Documents/English/poem.docx' },
         { win: 'C:\\Users\\sam\\Documents\\poem.docx\\English', mac: '/Users/sam/Documents/poem.docx/English' }
-      ], answer: 1, explain: 'Paths go from the outside in: Documents, then English, then the file. A file always comes last, because nothing can go inside it.' }
+      ], answer: 1, explain: 'Paths go from the outside in: Documents, then English, then the file. A file always comes last, because nothing can go inside it.' },
+      { type: 'tick', task: 'L1-PATH-02' }
     ],
 
     'L1-MANAGE-01': [
@@ -95,6 +100,8 @@ function lesson1Content_() {
         'Double-click **Year 9** to go inside it.',
         { win: 'Make another folder in the same way, called `Science`.', mac: 'Make another folder in the same way, called `Science`.' }
       ] },
+      { type: 'tip', only: 'win', text: 'On older versions of Windows, click the **Home** tab, then **New folder**.' },
+      { type: 'tick', task: 'L1-MANAGE-01' },
       { type: 'keys', title: 'Keyboard shortcuts', rows: [
         ['Copy', { win: '[[Ctrl]] + [[C]], then go to the new folder and press [[Ctrl]] + [[V]]', mac: '[[Command]] + [[C]], then go to the new folder and press [[Command]] + [[V]]' }],
         ['Move', { win: '[[Ctrl]] + [[X]], then go to the new folder and press [[Ctrl]] + [[V]]', mac: '[[Command]] + [[C]], then go to the new folder and press [[Option]] + [[Command]] + [[V]]' }],
@@ -109,6 +116,8 @@ function lesson1Content_() {
         'Check both folders. The photo should only be in **Year 9**.'
       ] },
       { type: 'download', file: 'photo.jpg', label: 'Download photo.jpg' },
+      { type: 'tick', task: 'L1-MANAGE-02' },
+      { type: 'tick', task: 'L1-MANAGE-03' },
       { type: 'steps', title: 'Rename, delete and get it back', steps: [
         'In **Year 9**, rename `photo.jpg` to `sunset.jpg`. Keep the `.jpg` at the end.',
         'Delete `sunset.jpg`.',
@@ -116,7 +125,8 @@ function lesson1Content_() {
         { win: 'Right-click `sunset.jpg` and click **Restore**.', mac: 'Right-click `sunset.jpg` and click **Put Back**.' },
         'Check that it\'s back in **Year 9**.'
       ] },
-      { type: 'tip', text: { win: 'On older versions of Windows, click the **Home** tab, then **New folder**.', mac: 'Deleted files stay in the Bin until it is emptied, so check it before you panic.' } }
+      { type: 'tip', only: 'mac', text: 'Deleted files stay in the Bin until it is emptied, so check it before you panic.' },
+      { type: 'tick', task: 'L1-MANAGE-04' }
     ],
 
     'L1-EXT-02': [
@@ -170,10 +180,13 @@ function lesson1Content_() {
         'Decide what to do with the two versions of the English assignment, and be ready to explain why.'
       ] },
       { type: 'tip', text: 'A good file name is short, says what the file is, and would still make sense to you next year.' },
+      { type: 'tick', task: 'L1-RESCUE-01' },
+      { type: 'tick', task: 'L1-RESCUE-02' },
       { type: 'steps', title: 'Explain it', steps: [
         'Write two sentences explaining how you organised the files, and why.',
         'Show your teacher your folders and read them your two sentences.'
-      ] }
+      ] },
+      { type: 'tick', task: 'L1-RESCUE-03' }
     ],
 
     'L1-EXTRA-01': [

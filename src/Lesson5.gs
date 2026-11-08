@@ -52,12 +52,14 @@ function lesson5Content_() {
         'Drag the selected photos onto the **Photos** folder. Dragging any one of them moves them all.',
         'Check: **Photos** has three photos, and `poster.png` is still in **Practice files**.'
       ] },
+      { type: 'tick', task: 'L5-SELECT-01' },
       { type: 'steps', title: 'Copy files that aren\'t together', steps: [
         'Make another folder in **Practice files**, called `Revision`.',
         { win: 'Select `notes-history.txt` and `notes-science.txt` using [[Ctrl]].', mac: 'Select `notes-history.txt` and `notes-science.txt` using [[Command]].' },
         { win: 'Press [[Ctrl]] + [[C]], open **Revision**, then press [[Ctrl]] + [[V]].', mac: 'Press [[Command]] + [[C]], open **Revision**, then press [[Command]] + [[V]].' },
         'Check: **Revision** has two files, and all four notes are still in **Practice files**.'
       ] },
+      { type: 'tick', task: 'L5-SELECT-02' },
       { type: 'tip', text: 'Selected the wrong files? Click an empty space in the folder to clear the selection, then start again.' }
     ],
 
@@ -81,6 +83,7 @@ function lesson5Content_() {
         { win: 'Open File Explorer and go to **Documents › Year 9**.', mac: 'Open Finder and go to **Documents › Year 9**.' },
         'Double-click `my-plan.txt`. Your goals should be there.'
       ] },
+      { type: 'tick', task: 'L5-SAVE-01' },
       { type: 'concept', text: { win: 'Notepad only changes your file when you save. Newer versions may remember unsaved text when you reopen Notepad, but that text isn\'t in your file until you save. VS Code, which you\'ll use later, can save for you or wait for you, so always check.', mac: 'Once a file has a name, TextEdit usually saves your changes for you. This is called **autosave**. Not every app does this. VS Code, which you\'ll use later, can save for you or wait for you, so always check.' } },
       { type: 'choice', id: 'unsaved', question: 'In an app without autosave, you add a paragraph but don\'t save. Then you attach the file to an email. What does your teacher get?', options: ['Your work with the new paragraph', 'The last version you saved', 'An empty file'], answer: 1, explain: 'An attachment is the file as it is stored. Changes you haven\'t saved are only in the app\'s window.' },
       { type: 'steps', title: 'Make a second version', intro: 'Now make a separate copy with a new name, so the first version stays safe.', steps: [
@@ -88,7 +91,8 @@ function lesson5Content_() {
         { win: 'Stay in **Year 9**, type `my-plan-v2.txt` as the name, and click **Save**.', mac: 'Press [[Command]] + [[S]], type `my-plan-v2.txt` as the name, choose **Year 9**, and click **Save**.' },
         { win: 'Look at the top of the window. You are now working in `my-plan-v2.txt`.', mac: 'Look at the top of the window. You are now working in `my-plan-v2.txt`.' }
       ] },
-      { type: 'tip', text: { win: 'Always look at the name at the top of the window before you type. It tells you which file you\'re changing.', mac: 'Hold [[Option]] while the **File** menu is open to see **Save As**. Duplicate is safer in TextEdit, because it makes the copy before you change anything.' } }
+      { type: 'tip', text: { win: 'Always look at the name at the top of the window before you type. It tells you which file you\'re changing.', mac: 'Hold [[Option]] while the **File** menu is open to see **Save As**. Duplicate is safer in TextEdit, because it makes the copy before you change anything.' } },
+      { type: 'tick', task: 'L5-SAVE-02' }
     ],
 
     'L5-VERSION-01': [
@@ -101,13 +105,15 @@ function lesson5Content_() {
         'Close it, then open `my-plan.txt` from **Year 9**.',
         'Does it have the third goal? Close it when you\'ve checked.'
       ] },
+      { type: 'tick', task: 'L5-VERSION-01' },
       { type: 'steps', title: 'Which speech is complete?', intro: 'There are three versions of a speech in **Practice files**. The teacher asked for a title, three reasons, and a thank-you at the end.', steps: [
         'Open each of the three speech files and check it against what the teacher asked for.',
         { win: 'Click the **Date modified** heading to see which is newest.', mac: 'Click the **Date Modified** heading to see which is newest.' },
         'Decide which one is complete, and what your evidence is.'
       ] },
       { type: 'choice', id: 'speech', question: 'Which speech has everything the teacher asked for?', options: ['`speech.txt`', '`speech-final.txt`', '`speech-final-v2.txt`'], answer: 1, explain: '`speech.txt` only has two reasons. `speech-final-v2.txt` is the newest, but it has no thank-you. Names and dates are clues, but what\'s inside is the evidence.' },
-      { type: 'choice', id: 'evidence', question: 'What is the best evidence that a file is the one to hand in?', options: ['Its name has "final" in it', 'It has the newest date', 'What\'s inside matches everything the task asks for'], answer: 2, explain: 'Anyone can type "final" in a name, and opening an old file to fix one thing can give it the newest date.' }
+      { type: 'choice', id: 'evidence', question: 'What is the best evidence that a file is the one to hand in?', options: ['Its name has "final" in it', 'It has the newest date', 'What\'s inside matches everything the task asks for'], answer: 2, explain: 'Anyone can type "final" in a name, and opening an old file to fix one thing can give it the newest date.' },
+      { type: 'tick', task: 'L5-VERSION-02' }
     ],
 
     'L5-FIND-01': [
@@ -117,10 +123,12 @@ function lesson5Content_() {
         'Open **Practice files**.',
         { win: 'Click in the search box at the top right, type `excursion`, then press [[Enter]].', mac: 'Click the magnifying glass at the top right and type `excursion`. Then click **Practice files** next to **Search**, so that you only search this folder.' }
       ] },
+      { type: 'tick', task: 'L5-FIND-01' },
       { type: 'steps', title: 'Find where it lives', steps: [
         { win: 'Right-click `excursion-form.pdf` in the results, then click **Open file location**.', mac: 'Right-click `excursion-form.pdf` in the results, then click **Show in Enclosing Folder**.' },
         { win: 'Read the bar at the top to see the folder it\'s in.', mac: 'Click **View** in the menu bar, then **Show Path Bar** if you can\'t see it. Read the bar at the bottom to see the folder it\'s in.' }
       ] },
+      { type: 'tick', task: 'L5-FIND-02' },
       { type: 'choice', id: 'where', question: 'Which folder is `excursion-form.pdf` in?', options: ['Practice files', 'Practice files › old stuff › 2026 › misc', 'Practice files › old stuff › 2025'], answer: 1, explain: 'Search looks inside every folder within the one you searched, which is how it found a file three folders down.' },
       { type: 'tip', text: { win: 'File Explorer also lists files you opened recently. Click **Home** in the left pane, or **Quick access** on older Windows. Check where a recent file is stored before you change it.', mac: 'Finder also lists files you used recently. Click **Recents** in the sidebar. Check where a recent file is stored before you change it.' } },
       { type: 'tip', text: 'Search can find two files with the same name in different places, such as a copy in **Downloads**. Check the location of the one you open.' }
@@ -141,6 +149,10 @@ function lesson5Content_() {
         'Close your report, then open it again from its folder. Check that your last line is there.'
       ] },
       { type: 'tip', text: { win: 'Use **Save As** before you change anything, so the copy in **Archive** stays as it was.', mac: 'Use **Duplicate** before you change anything. TextEdit saves changes for you, so typing first would change the copy in **Archive**.' } },
+      { type: 'tick', task: 'L5-RECOVER-01' },
+      { type: 'tick', task: 'L5-RECOVER-02' },
+      { type: 'tick', task: 'L5-RECOVER-03' },
+      { type: 'tick', task: 'L5-RECOVER-04' },
       { type: 'steps', title: 'Checklist', intro: 'Check your work against this list before you tick the last box.', steps: [
         'The two images are together in one folder.',
         '**Archive** has all three original reports, unchanged.',
@@ -149,6 +161,7 @@ function lesson5Content_() {
         'Every other file is in a folder that makes sense.',
         'You can explain how you knew which report was complete.'
       ] },
+      { type: 'tick', task: 'L5-RECOVER-05' },
       { type: 'choice', id: 'garden', question: 'Which report did you choose?', options: ['`garden report.txt`', '`Copy of garden report.txt`', '`garden report FINAL.txt`'], answer: 1, explain: 'It\'s the only one with week 4 results and a conclusion. The FINAL one is newer, but it stops after week 3.' }
     ],
 
@@ -156,7 +169,9 @@ function lesson5Content_() {
       { type: 'objective', text: 'Homework: before next lesson, install VS Code and Python, so you can start coding straight away.' },
       { type: 'concept', text: '**VS Code** is the app you\'ll write code in. **Python** is what runs your code. Installing them at home is quicker than over school Wi-Fi, and you\'ll need both for your Python work this term.' },
       { type: 'steps', title: 'Install VS Code', steps: installVsCodeSteps_() },
+      { type: 'tick', task: 'L5-PREP-01' },
       { type: 'steps', title: 'Install Python', steps: installPythonSteps_() },
+      { type: 'tick', task: 'L5-PREP-02' },
       { type: 'tip', text: 'Stuck, or not allowed to install apps on your laptop? Tick only what you finished, and tell your teacher at the start of next lesson.' }
     ],
 

@@ -21,7 +21,7 @@
   button { font: inherit; color: inherit; cursor: pointer; }
   :focus-visible { outline: 3px solid var(--l1); outline-offset: 2px; border-radius: 4px; }
   .L1 { --acc: var(--l1); } .L2 { --acc: var(--l2); } .L3 { --acc: var(--l3); } .L4 { --acc: var(--l4); } .L5 { --acc: var(--l5); }
-  .L1, .L2, .L3, .L4, .L5 { --soft: color-mix(in srgb, var(--acc) 13%, var(--surface)); }
+  .L1, .L2, .L3, .L4, .L5 { --soft: color-mix(in srgb, var(--acc) 13%, var(--surface)); --ok-soft: color-mix(in srgb, var(--ok) 14%, var(--surface)); }
 
   .message { padding: 32px 16px; max-width: 60ch; margin: 0 auto; display: grid; gap: 10px; }
 
@@ -58,7 +58,55 @@
   .card { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 20px; display: grid; gap: 16px; }
   .eyebrow { font-size: .76rem; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; color: var(--acc); }
   .placeholder { background: var(--soft); border-radius: 8px; padding: 13px 15px; }
-  .tasks { display: grid; gap: 7px; }
+  .tasks { display: grid; gap: 10px; }
+  .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .card-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px; }
+  .chip { font-size: .85rem; font-weight: 700; color: var(--muted); background: var(--sunk); border: 1px solid var(--line); border-radius: 999px; padding: 2px 10px; font-variant-numeric: tabular-nums; }
+  .chip.all { color: var(--ok); border-color: var(--ok); background: var(--ok-soft); }
+
+  /* A checkpoint: the one look for every tick box in the course. */
+  .checkpoint { display: grid; gap: 4px; }
+  .checkpoint label { display: flex; gap: 14px; align-items: center; padding: 12px 16px; border: 2px dashed var(--ok); border-radius: 12px; background: var(--surface); cursor: pointer; transition: background .2s; }
+  .checkpoint label:hover { background: var(--ok-soft); }
+  .checkpoint input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+  .checkpoint .box { flex: none; width: 34px; height: 34px; border-radius: 9px; border: 2.5px solid var(--ok); background: var(--surface); display: grid; place-items: center; }
+  .checkpoint .box svg { width: 24px; height: 24px; fill: none; stroke: var(--on); stroke-width: 3.2; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 24; stroke-dashoffset: 24; }
+  .checkpoint .cp-text { display: grid; gap: 1px; }
+  .checkpoint .kicker { font-size: .74rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--ok); }
+  .checkpoint .cp-label { font-weight: 700; }
+  .checkpoint input:focus-visible + .box { outline: 3px solid var(--acc); outline-offset: 3px; }
+  .checkpoint input:disabled + .box { opacity: .6; }
+  .checkpoint.done label { border-style: solid; background: var(--ok-soft); }
+  .checkpoint.done .box { background: var(--ok); }
+  .checkpoint.done .box svg { stroke-dashoffset: 0; }
+  .cp-status { font-size: .85rem; font-weight: 700; min-height: 1.2em; padding-left: 4px; }
+  .cp-status:empty { min-height: 0; }
+  .cp-status.ok { color: var(--ok); } .cp-status.bad { color: var(--bad); } .cp-status.busy { color: var(--muted); }
+  .checkpoint.pop .box svg { stroke-dashoffset: 24; animation: draw .3s ease-out .05s forwards; }
+  .checkpoint.pop .box { animation: pop .35s ease-out; }
+  @keyframes draw { to { stroke-dashoffset: 0; } }
+  @keyframes pop { 0% { transform: scale(1); } 45% { transform: scale(1.25); } 100% { transform: scale(1); } }
+
+  .checklist { border-top: 1px solid var(--line); padding-top: 14px; display: grid; gap: 8px; }
+  .checklist h3 { font-size: 1rem; }
+  .checklist ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+  .checklist button { display: flex; gap: 10px; align-items: center; width: 100%; text-align: left; background: none; border: 0; padding: 4px 6px; border-radius: 6px; }
+  .checklist button:hover { background: var(--sunk); }
+  .checklist .mini { flex: none; width: 20px; height: 20px; border-radius: 6px; border: 2px solid var(--ok); display: grid; place-items: center; }
+  .checklist .mini svg { width: 14px; height: 14px; fill: none; stroke: var(--on); stroke-width: 3.5; stroke-linecap: round; stroke-linejoin: round; visibility: hidden; }
+  .checklist li.done .mini { background: var(--ok); }
+  .checklist li.done .mini svg { visibility: visible; }
+  .checklist li.done button { color: var(--muted); }
+
+  /* The section list: what everyone finishes, then the optional extras. */
+  .group { display: grid; gap: 6px; border-radius: 10px; padding: 10px 8px 10px 10px; }
+  .group.core { background: var(--surface); border: 1.5px solid var(--acc); }
+  .group.extra { border: 1.5px dashed var(--line); }
+  .group-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; margin: 0; max-width: none; font-size: .74rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--acc); }
+  .group.extra .group-head { color: var(--muted); }
+  .group-count { letter-spacing: 0; text-transform: none; font-variant-numeric: tabular-nums; }
+  .group-note { font-size: .85rem; color: var(--muted); }
+  .group.extra .section-list button::before { border-radius: 2px; transform: rotate(45deg) scale(.9); }
   .task { display: flex; gap: 10px; align-items: flex-start; padding: 9px 12px; border: 1px solid var(--line); border-radius: 7px; cursor: pointer; }
   .task:has(input:checked) { background: color-mix(in srgb, var(--ok) 10%, var(--surface)); border-color: var(--ok); }
   .task input { width: 18px; height: 18px; margin: 2px 0 0; accent-color: var(--ok); flex: none; }
@@ -144,5 +192,5 @@
     .side { padding-bottom: 0; }
     .searching .side { display: none; }
   }
-  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } .checkpoint.pop .box svg { stroke-dashoffset: 0; } }
 </style>
