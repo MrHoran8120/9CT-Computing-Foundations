@@ -351,13 +351,122 @@ const vsCode = path.join(ROOT, 'exercise-files', 'vs-code');
 fs.mkdirSync(vsCode, { recursive: true });
 fs.writeFileSync(path.join(vsCode, 'python-starter.zip'), pythonZip);
 
+// "ZIP files and submission" (lesson ID L2).
+// compress-test.zip: a folder of text, which shrinks a lot, and a folder of photos, which barely
+// shrinks because photos are already compressed.
+const subjects = ['Pizza', 'Pasta', 'Sushi', 'Tacos', 'Curry', 'Salad'];
+const surveyRows = ['Student,Year,Favourite lunch,Walks to school'];
+for (let i = 1; i <= 2500; i++) surveyRows.push(`Student ${i},Year 9,${subjects[i % subjects.length]},${i % 3 ? 'Yes' : 'No'}`);
+const readingLog = [];
+for (let week = 1; week <= 400; week++) readingLog.push(`Week ${week}: I read for 20 minutes each night and wrote a short summary of each chapter.`);
+const compressFiles = {
+  'Notes/survey-results.csv': { data: text(surveyRows), date: '2026-07-01' },
+  'Notes/reading-log.txt': { data: text(readingLog), date: '2026-07-02' },
+  'Photos/beach.jpg': { data: image('photo.jpg'), date: '2026-07-03' },
+  'Photos/volcano.jpg': { data: image('IMG_2041.jpg'), date: '2026-07-03' },
+  'Photos/holiday.jpg': { data: image('IMG_2042.jpg'), date: '2026-07-03' }
+};
+
+// bake-sale.zip has four faults for students to repair:
+//  1. The logo uses a full path from Sam's laptop.
+//  2. index.html expects css/style.css, but style.css is loose in the main folder.
+//  3. js/prices.js was saved as prices.js.txt.
+//  4. The team photo isn't in the ZIP. It's a separate download, team-photo.png.
+const PINK = [236, 112, 160];
+const CREAM = [255, 244, 222];
+const BROWN_DARK = [120, 72, 40];
+const bakeLogo = png(240, 160, CREAM, [
+  [80, 30, 80, 14, PINK], [70, 44, 100, 16, PINK], [64, 60, 112, 14, PINK],
+  [72, 76, 96, 14, BROWN_DARK], [76, 90, 88, 14, BROWN_DARK], [80, 104, 80, 14, BROWN_DARK], [84, 118, 72, 12, BROWN_DARK],
+  [116, 18, 8, 12, [200, 30, 60]]
+]);
+const person = (x, shirt) => [[x + 14, 40, 28, 28, [224, 172, 135]], [x, 72, 56, 70, shirt]];
+const teamPhoto = png(320, 180, [190, 220, 240], [
+  [0, 140, 320, 40, [120, 170, 90]],
+  ...person(40, [236, 112, 160]), ...person(132, [80, 120, 200]), ...person(224, [250, 190, 60])
+]);
+const bakeHtml = [
+  '<!DOCTYPE html>',
+  '<html lang="en">',
+  '<head>',
+  '  <meta charset="utf-8">',
+  '  <title>Year 9 Bake Sale</title>',
+  '  <link rel="stylesheet" href="css/style.css">',
+  '</head>',
+  '<body>',
+  '  <header>',
+  '    <img src="file:///C:/Users/sam/Desktop/bake-sale/images/logo.png" alt="Bake sale logo" class="logo">',
+  '    <h1>Year 9 Bake Sale</h1>',
+  '    <p>Friday lunchtime, outside the library. All money raised goes to the Year 9 formal.</p>',
+  '  </header>',
+  '  <main>',
+  '    <section class="card">',
+  '      <h2>Price calculator</h2>',
+  '      <label for="cupcakes">Cupcakes ($2.50 each)</label>',
+  '      <input type="number" id="cupcakes" min="0" value="0">',
+  '      <label for="cookies">Cookies ($1.50 each)</label>',
+  '      <input type="number" id="cookies" min="0" value="0">',
+  '      <p class="total">Total: <span id="total">calculator not working yet</span></p>',
+  '    </section>',
+  '    <section class="card">',
+  '      <h2>Meet the bakers</h2>',
+  '      <img src="images/team-photo.png" alt="Photo of the Year 9 baking team" class="team">',
+  '    </section>',
+  '  </main>',
+  '  <script src="js/prices.js"></script>',
+  '</body>',
+  '</html>'
+];
+const bakeCss = [
+  'body { margin: 0; font-family: Arial, sans-serif; background: #fff4de; color: #4a2c17; }',
+  'header { background: #ec70a0; color: white; text-align: center; padding: 24px; }',
+  '.logo { width: 120px; background: white; border-radius: 12px; }',
+  'main { max-width: 640px; margin: 24px auto; padding: 0 16px; display: grid; gap: 16px; }',
+  '.card { background: white; border-radius: 12px; padding: 16px; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15); }',
+  'label, input { display: block; margin-top: 8px; }',
+  '.total { font-size: 1.4em; font-weight: bold; }',
+  '.team { width: 100%; border-radius: 8px; }'
+];
+const bakeJs = [
+  '// Works out the total cost as the numbers change.',
+  'const cupcakes = document.getElementById("cupcakes");',
+  'const cookies = document.getElementById("cookies");',
+  'const total = document.getElementById("total");',
+  '',
+  'function update() {',
+  '  const cost = cupcakes.value * 2.5 + cookies.value * 1.5;',
+  '  total.textContent = "$" + cost.toFixed(2);',
+  '}',
+  '',
+  'cupcakes.addEventListener("input", update);',
+  'cookies.addEventListener("input", update);',
+  'update();'
+];
+const bakeFiles = {
+  'bake-sale/index.html': { data: text(bakeHtml), date: '2026-07-20' },
+  'bake-sale/style.css': { data: text(bakeCss), date: '2026-07-18' },
+  'bake-sale/js/prices.js.txt': { data: text(bakeJs), date: '2026-07-19' },
+  'bake-sale/images/logo.png': { data: bakeLogo, date: '2026-07-15' }
+};
+const zipFlat = (files) => zip(Object.keys(files).map((name) => ({ name, data: files[name].data, date: files[name].date })));
+const compressZip = zipFlat(compressFiles);
+const bakeZip = zipFlat(bakeFiles);
+const zipLesson = path.join(ROOT, 'exercise-files', 'zip-and-hand-in');
+fs.mkdirSync(zipLesson, { recursive: true });
+fs.writeFileSync(path.join(zipLesson, 'compress-test.zip'), compressZip);
+fs.writeFileSync(path.join(zipLesson, 'bake-sale.zip'), bakeZip);
+fs.writeFileSync(path.join(zipLesson, 'team-photo.png'), teamPhoto);
+
 const served = {
   'test-file.txt': { mime: 'text/plain', data: testFile },
   'photo.jpg': { mime: 'image/jpeg', data: photo },
   'sams-files.zip': { mime: 'application/zip', data: samsZip },
   'practice-files.zip': { mime: 'application/zip', data: practiceZip },
   'garden-project.zip': { mime: 'application/zip', data: gardenZip },
-  'python-starter.zip': { mime: 'application/zip', data: pythonZip }
+  'python-starter.zip': { mime: 'application/zip', data: pythonZip },
+  'compress-test.zip': { mime: 'application/zip', data: compressZip },
+  'bake-sale.zip': { mime: 'application/zip', data: bakeZip },
+  'team-photo.png': { mime: 'image/png', data: teamPhoto }
 };
 
 const entries = Object.keys(served).map((name) => `  '${name}': { mime: '${served[name].mime}', data: '${served[name].data.toString('base64')}' }`);

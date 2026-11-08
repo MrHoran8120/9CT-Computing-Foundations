@@ -235,6 +235,75 @@ function vscodeDiagram_() {
   return svg + '</svg>';
 }
 
+/** A ZIP icon: a file with a zip down its middle. */
+function zipIcon_(x, y) {
+  var s = '<path d="M' + x + ' ' + y + ' h14 l6 6 v18 h-20 z" class="d-file"/>';
+  for (var i = 0; i < 4; i++) s += '<rect x="' + (x + 8) + '" y="' + (y + 3 + i * 5) + '" width="4" height="3" class="d-accent"/>';
+  return s;
+}
+
+function extractDiagram_(os) {
+  var isWin = os === 'win';
+  var svg = svgOpen_(620, 210);
+  svg += box_(10, 30, 170, 110, 'sunk') + label_(22, 52, 'Downloads', 'heading') + zipIcon_(24, 66) + label_(52, 84, 'bake-sale.zip');
+  if (isWin) {
+    svg += arrow_(188, 85, 248, 85) + label_(218, 74, 'Extract All', 'muted', 'middle');
+    svg += box_(256, 30, 200, 110, 'accent-soft') + label_(268, 52, 'Choose where', 'heading');
+    svg += box_(268, 64, 176, 26, 'sunk') + label_(276, 82, '...\\Downloads\\bake-sale', 'text');
+    svg += label_(268, 116, 'You can change this', 'muted') + callout_(448, 52, 1);
+    svg += arrow_(464, 85, 494, 85);
+    svg += box_(500, 30, 110, 110, 'sunk') + folder_(512, 56) + label_(512, 104, 'bake-sale');
+    svg += label_(10, 172, 'Windows asks where to put the files. Check the folder before you click Extract.', 'muted');
+    svg += label_(10, 196, 'Opening the ZIP without extracting only lets you look. Changes there don\'t stay.', 'muted');
+  } else {
+    svg += arrow_(188, 85, 268, 85) + label_(228, 74, 'double-click', 'muted', 'middle');
+    svg += box_(276, 30, 230, 110, 'accent-soft') + label_(288, 52, 'Downloads', 'heading');
+    svg += zipIcon_(292, 66) + label_(320, 84, 'bake-sale.zip') + folder_(290, 100) + label_(322, 118, 'bake-sale');
+    svg += callout_(500, 52, 1);
+    svg += label_(10, 172, 'Your Mac extracts straight away, into the same folder as the ZIP. It doesn\'t ask where.', 'muted');
+    svg += label_(10, 196, 'Then move the folder to where it belongs.', 'muted');
+  }
+  return svg + '</svg>';
+}
+
+function siteDiagram_() {
+  var rows = [
+    { x: 30, name: 'bake-sale', folder: true },
+    { x: 60, name: 'index.html', file: true, page: true },
+    { x: 60, name: 'css', folder: true }, { x: 90, name: 'style.css', file: true, path: 'css/style.css' },
+    { x: 60, name: 'js', folder: true }, { x: 90, name: 'prices.js', file: true, path: 'js/prices.js' },
+    { x: 60, name: 'images', folder: true }, { x: 90, name: 'logo.png', file: true, path: 'images/logo.png' }
+  ];
+  var svg = svgOpen_(620, 300) + box_(10, 10, 600, 280, 'sunk');
+  rows.forEach(function (row, i) {
+    var y = 26 + i * 32;
+    svg += (row.folder ? folder_(row.x, y) : fileIcon_(row.x + 3, y)) + label_(row.x + 34, y + 18, row.name, row.page ? 'heading' : 'text');
+    if (row.path) {
+      svg += '<line x1="' + (row.x + 130) + '" y1="' + (y + 13) + '" x2="330" y2="' + (y + 13) + '" class="d-divider"/>';
+      svg += box_(336, y, 250, 26, 'accent-soft') + label_(348, y + 18, row.path);
+    }
+  });
+  svg += label_(336, 70, 'Paths written in index.html,', 'muted') + label_(336, 90, 'starting from its own folder', 'muted');
+  return svg + '</svg>';
+}
+
+function levelsDiagram_() {
+  var levels = [
+    ['Level 0', 'No AI', ['AI may not be used', 'for this task.']],
+    ['Level 1', 'Explanation only', ['AI may explain ideas', 'and errors. Everything', 'you hand in is yours.']],
+    ['Level 2', 'Assisted and', ['AI may contribute,', 'if you mark it and', 'record it.']]
+  ];
+  var svg = svgOpen_(620, 200);
+  levels.forEach(function (level, i) {
+    var x = 12 + i * 202;
+    svg += box_(x, 12, 192, 176, i === 0 ? 'sunk' : 'accent-soft');
+    svg += label_(x + 14, 40, level[0], 'heading') + label_(x + 14, 62, level[1], 'heading');
+    if (i === 2) svg += label_(x + 14, 84, 'acknowledged', 'heading');
+    level[2].forEach(function (line, j) { svg += label_(x + 14, (i === 2 ? 116 : 98) + j * 22, line, 'text'); });
+  });
+  return svg + '</svg>';
+}
+
 function storageDiagram_() {
   return svgOpen_(620, 180)
     + box_(20, 30, 230, 120, 'sunk') + label_(135, 56, 'Local', 'heading', 'middle')

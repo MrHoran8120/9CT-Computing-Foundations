@@ -567,11 +567,11 @@ test('a Dashboard problem never stops a student loading the app', () => {
 const flat = (value) => JSON.parse(JSON.stringify(value));
 const lessonOne = (ctx) => flat(ctx.courseWithContent_())[0];
 
-const written = (ctx) => flat(ctx.courseWithContent_()).filter((lesson) => ['L1', 'L5', 'L4'].includes(lesson.id));
+const written = (ctx) => flat(ctx.courseWithContent_()).filter((lesson) => ['L1', 'L5', 'L4', 'L2', 'L3'].includes(lesson.id));
 
 test('every section of a written lesson has content, and every first task ID matches one', () => {
   const { ctx } = load();
-  [['L1', ctx.lesson1Content_()], ['L5', ctx.lesson5Content_()], ['L4', ctx.lesson4Content_()]].forEach(([id, content]) => {
+  [['L1', ctx.lesson1Content_()], ['L5', ctx.lesson5Content_()], ['L4', ctx.lesson4Content_()], ['L2', ctx.lesson2Content_()], ['L3', ctx.lesson3Content_()]].forEach(([id, content]) => {
     const lesson = written(ctx).find((item) => item.id === id);
     lesson.sections.forEach((section) => assert.ok(section.content, section.title));
     const known = lesson.sections.map((section) => section.tasks[0].id);
@@ -606,7 +606,7 @@ test('students turn on file extensions before they first download or rename a fi
 
 test('lesson content is valid for both Windows and Mac', () => {
   const { ctx } = load();
-  const blockTypes = ['objective', 'concept', 'tip', 'diagram', 'steps', 'keys', 'download', 'choice', 'match', 'tree', 'tick'];
+  const blockTypes = ['objective', 'concept', 'tip', 'diagram', 'steps', 'keys', 'download', 'choice', 'match', 'tree', 'tick', 'code'];
   const bothOrShared = (value, where) => {
     if (value && typeof value === 'object') {
       assert.ok(value.win && value.mac, where + ' needs both Windows and Mac');
@@ -636,7 +636,7 @@ test('drawings are complete and hold no scripts', () => {
   const { ctx } = load();
   [ctx.appFileDiagram_(), ctx.olderWindowsExtensionsDiagram_(), ctx.windowDiagram_('win'), ctx.windowDiagram_('mac'), ctx.pathDiagram_('win'), ctx.pathDiagram_('mac'),
     ctx.copyMoveDiagram_(), ctx.extensionDiagram_(), ctx.storageDiagram_(), ctx.selectDiagram_('win'), ctx.selectDiagram_('mac'),
-    ctx.saveDialogDiagram_('win'), ctx.saveDialogDiagram_('mac'), ctx.versionsDiagram_(), ctx.vscodeDiagram_()].forEach((svg) => {
+    ctx.saveDialogDiagram_('win'), ctx.saveDialogDiagram_('mac'), ctx.versionsDiagram_(), ctx.vscodeDiagram_(), ctx.extractDiagram_('win'), ctx.extractDiagram_('mac'), ctx.siteDiagram_(), ctx.levelsDiagram_()].forEach((svg) => {
     assert.match(svg, /^<svg .*<\/svg>$/s);
     assert.ok(!/<script|on[a-z]+=|href=/i.test(svg));
     assert.ok(!/undefined|NaN/.test(svg));
@@ -784,4 +784,39 @@ test('each checkpoint belongs to a task in its own section, and appears only onc
     assert.strictEqual(new Set(placed).size, placed.length, section.title + ' places a tick twice');
     if (placed.length) assert.strictEqual(placed.length, ids.length, section.title + ' places some ticks but not all');
   }));
+});
+
+test('every lesson in the course has content now', () => {
+  const { ctx } = load();
+  flat(ctx.courseWithContent_()).forEach((lesson) => lesson.sections.forEach((section) => assert.ok(section.content, lesson.id + ' ' + section.title)));
+});
+
+test('the bake sale site has its four faults, and fixing them makes every path work', () => {
+  const { ctx } = load();
+  const files = fileFrom(ctx, 'bake-sale.zip');
+  const names = Object.keys(files).map((name) => name.replace('bake-sale/', ''));
+  const html = files['bake-sale/index.html'].data.toString();
+  const refs = [...html.matchAll(/(?:src|href)="([^"]+)"/g)].map((m) => m[1]);
+  assert.ok(refs.some((ref) => ref.startsWith('file:///C:/')), 'fault 1: an absolute logo path');
+  assert.ok(refs.includes('css/style.css') && names.includes('style.css') && !names.includes('css/style.css'), 'fault 2: stylesheet in the wrong place');
+  assert.ok(refs.includes('js/prices.js') && names.includes('js/prices.js.txt'), 'fault 3: script saved as .txt');
+  assert.ok(refs.includes('images/team-photo.png') && !names.includes('images/team-photo.png') && ctx.EXERCISE_FILES['team-photo.png'], 'fault 4: photo downloaded separately');
+  // After the four fixes, every path in the page points at a real file.
+  const fixed = names.map((name) => name === 'style.css' ? 'css/style.css' : name === 'js/prices.js.txt' ? 'js/prices.js' : name).concat(['images/team-photo.png']);
+  refs.map((ref) => ref.replace('file:///C:/Users/sam/Desktop/bake-sale/', '')).forEach((ref) => assert.ok(fixed.includes(ref), ref + ' resolves after fixing'));
+  assert.ok(files['bake-sale/js/prices.js.txt'].data.toString().includes('getElementById("total")'));
+});
+
+test('the compress test folders really differ in how much they shrink', () => {
+  const { ctx } = load();
+  const zlib = require('zlib');
+  const files = fileFrom(ctx, 'compress-test.zip');
+  const ratio = (folder) => {
+    const parts = Object.keys(files).filter((name) => name.startsWith(folder + '/')).map((name) => files[name].data);
+    const raw = parts.reduce((n, b) => n + b.length, 0);
+    const packed = parts.reduce((n, b) => n + zlib.deflateRawSync(b).length, 0);
+    return packed / raw;
+  };
+  assert.ok(ratio('Notes') < 0.15, 'text shrinks to under 15%');
+  assert.ok(ratio('Photos') > 0.5, 'photos barely shrink');
 });

@@ -12,7 +12,7 @@ Each lesson also has at least one extra challenge for students who finish early.
 
 Students work through one web app, choosing Windows or Mac instructions, and can search the whole course to find where something was taught. Their progress saves to a private Google Sheet that the teacher uses as a dashboard.
 
-**Status:** in development. The app foundation is in place and lesson content is still being written. It hasn't been deployed or tested with real student accounts yet.
+**Status:** in development. All five lessons are written. The app is deployed for testing, but it hasn't been used with a class yet.
 
 This is a new implementation written from the course requirements. It's a reconstruction of an earlier prototype whose source was never recovered, and it contains none of that prototype's code.
 

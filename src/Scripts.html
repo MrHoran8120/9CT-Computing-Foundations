@@ -185,6 +185,8 @@
       if (block.type === 'choice') return renderChoice(block);
       if (block.type === 'match') return renderMatch(block);
       if (block.type === 'tree') return renderTree(block);
+      // Code is shown exactly as written, with its spacing kept. No text marks.
+      if (block.type === 'code') return el('pre', { class: 'codeblock' }, [el('code', { text: forOs(block.text) })]);
       if (block.type === 'tick') return currentCheckpoint ? currentCheckpoint(block.task) : null;
       return null;
     }

@@ -222,7 +222,7 @@ var COURSE = [
         { id: 'L3-SCEN-01', label: 'I worked through all eight scenarios.' }
       ] },
       { title: 'Explain your own work', tasks: [
-        { id: 'L3-EXPLAIN-01', label: 'I explained a short piece of HTML to my partner.' }
+        { id: 'L3-EXPLAIN-01', label: 'I explained a short piece of code to my partner.' }
       ] },
       { title: 'Why we acknowledge AI', tasks: [
         { id: 'L3-ACK-01', label: 'I can say why AI use is acknowledged.' }
@@ -260,7 +260,7 @@ function allTaskIds_() {
  * which never changes. A section without content shows a "still being written" note.
  */
 function courseWithContent_() {
-  var content = { L1: lesson1Content_(), L5: lesson5Content_(), L4: lesson4Content_() };
+  var content = { L1: lesson1Content_(), L5: lesson5Content_(), L4: lesson4Content_(), L2: lesson2Content_(), L3: lesson3Content_() };
   return COURSE.map(function (lesson) {
     var lessonContent = content[lesson.id] || {};
     return {
