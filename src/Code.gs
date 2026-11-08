@@ -14,7 +14,7 @@
  */
 
 var SHEETS = {
-  CLASSES: { name: 'Classes', headers: ['Class', 'Code'] },
+  CLASSES: { name: 'Classes', headers: ['Class', 'Code', 'Lessons open'] },
   STUDENTS: { name: 'Students', headers: ['Email', 'Name', 'Class', 'OS', 'Last active', 'Blocked'] },
   PROGRESS: { name: 'Progress', headers: ['Email', 'Name', 'Class', 'OS', 'Task ID', 'Done', 'Updated'] }
 };
@@ -82,12 +82,59 @@ function getBootstrap() {
     }
   });
 
+  // Lessons that aren't open yet are sent as locked tabs with no content, so they can't be read early.
+  var open = lessonsOpen_(book, who);
+  var course = courseWithContent_().map(function (lesson, i) {
+    if (i < open) return lesson;
+    return { id: lesson.id, title: lesson.title, unit: lesson.unit, tab: lesson.tab, optional: lesson.optional, locked: true, sections: [] };
+  });
+
   return {
     status: 'ok',
     student: { name: who.name, className: who.className, os: who.os },
-    course: courseWithContent_(),
+    course: course,
     progress: progress
   };
+}
+
+/** True when the signed-in person owns this copy of the app, which is the teacher. */
+function isTeacher_(email) {
+  try {
+    return !!email && normaliseEmail_(Session.getEffectiveUser().getEmail()) === email;
+  } catch (err) {
+    return false;
+  }
+}
+
+/**
+ * How many lessons this student's class can open, counting in the order students see them.
+ * The teacher sets it in the Classes tab's "Lessons open" column: a number, or "all". A blank
+ * or unreadable cell opens Lesson 1 only, so nobody races ahead before it's set. The teacher
+ * always sees every lesson.
+ */
+function lessonsOpen_(book, who) {
+  if (isTeacher_(who.email)) return COURSE.length;
+  var rows = readRows_(book, SHEETS.CLASSES);
+  for (var i = 0; i < rows.length; i++) {
+    if (String(rows[i][0]).trim().toLowerCase() !== String(who.className).trim().toLowerCase()) continue;
+    var value = String(rows[i][2] === undefined ? '' : rows[i][2]).trim().toLowerCase();
+    if (value === 'all') return COURSE.length;
+    var number = parseInt(value, 10);
+    return isNaN(number) || number < 1 ? 1 : Math.min(number, COURSE.length);
+  }
+  return 1;
+}
+
+/** True when the task belongs to a lesson this student's class can open. */
+function isTaskOpen_(book, who, taskId) {
+  var open = lessonsOpen_(book, who);
+  for (var i = 0; i < open; i++) {
+    var inLesson = COURSE[i].sections.some(function (section) {
+      return section.tasks.some(function (task) { return task.id === taskId; });
+    });
+    if (inLesson) return true;
+  }
+  return false;
 }
 
 /**
@@ -141,6 +188,7 @@ function setTask(taskId, done) {
   if (allTaskIds_().indexOf(taskId) === -1) throw new Error('Unknown task.');
   if (done !== true && done !== false) throw new Error('A task must be ticked or unticked.');
   var who = requireStudent_();
+  if (!isTaskOpen_(openBook_(), who, taskId)) throw new Error('That lesson isn\'t open yet.');
   return withLock_(function () {
     var book = openBook_();
     var now = new Date();

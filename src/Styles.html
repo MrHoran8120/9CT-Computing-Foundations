@@ -43,6 +43,8 @@
   .lesson-tabs { flex-basis: 100%; display: flex; gap: 3px; overflow-x: auto; }
   .lesson-tab { flex: none; border: 0; padding: 6px 14px; border-radius: 7px 7px 0 0; background: var(--sunk); color: var(--muted); font-weight: 700; font-size: .9rem; }
   .lesson-tab[aria-current="page"] { background: var(--acc); color: var(--on); }
+  .lesson-tab.locked { cursor: not-allowed; opacity: .6; background: transparent; border: 1.5px dashed var(--line); border-bottom: 0; display: inline-flex; gap: 6px; align-items: baseline; }
+  .opens-later { font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; }
 
   .layout { display: grid; grid-template-columns: 240px minmax(0, 1fr); max-width: 1280px; margin: 0 auto; }
   .side { padding: 16px 12px; display: grid; gap: 12px; align-content: start; font-size: .9rem; }

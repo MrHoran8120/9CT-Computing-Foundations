@@ -29,7 +29,10 @@ const mock = `<script>
         if (scene === 'blocked') return { status: 'blocked' };
         if (scene === 'no-identity') return { status: 'no_identity' };
         if (!joined) return { status: 'needs_registration' };
-        return { status: 'ok', student: { name: joined, className: 'Class A', os: os }, course: ${course}, progress: saved };
+        var course = ${course};
+        // #locked shows a class with two lessons open, as the teacher would set in the Classes tab.
+        if (scene === 'locked') course = course.map(function (lesson, i) { return i < 2 ? lesson : { id: lesson.id, title: lesson.title, tab: lesson.tab, locked: true, sections: [] }; });
+        return { status: 'ok', student: { name: joined, className: 'Class A', os: os }, course: course, progress: saved };
       },
       registerStudent: function (name, code) {
         if (!/^[A-Za-z][A-Za-z '.-]*$/.test(name.trim())) return { status: 'invalid_name' };

@@ -548,6 +548,13 @@
 
       var lessonTabs = el('nav', { class: 'lesson-tabs', 'aria-label': 'Lessons' },
         state.course.map(function (item, i) {
+          // A lesson your teacher hasn't opened yet shows as a greyed-out tab you can't click.
+          if (item.locked) {
+            return el('button', { type: 'button', class: 'lesson-tab locked', disabled: true, title: 'Your teacher will open this lesson later' }, [
+              el('span', { text: (i + 1) + '. ' + item.tab }),
+              el('span', { class: 'opens-later', text: 'Opens later' })
+            ]);
+          }
           var attrs = {
             type: 'button', class: 'lesson-tab ' + item.id, text: (i + 1) + '. ' + item.tab,
             onclick: function () { state.lesson = i; state.section = 0; state.search = ''; renderCourse(); }

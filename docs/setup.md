@@ -91,11 +91,15 @@ Both settings matter. "Execute as Me" lets the app save to your Sheet without st
 
 In the **Classes** tab of your Sheet, add one row per class, starting at row 2:
 
-| Class | Code |
-|---|---|
-| The class name, such as `9CT1` | A code that's hard to guess, such as `maple-42` |
+| Class | Code | Lessons open |
+|---|---|---|
+| The class name, such as `9CT1` | A code that's hard to guess, such as `maple-42` | How many lessons the class can open, such as `1`, or `all` |
 
 Use a different code for each class, because the code decides which class a student joins. Changes take effect straight away, with no need to redeploy.
+
+**Lessons open** stops keen students racing through the whole course in one night. Before each lesson, increase the number for that class. Lessons are counted in the order students see them, so `3` opens Files, Save and find, and VS Code. Students see later lessons as greyed-out tabs marked **Opens later**, and the app doesn't send their content until you open them. A blank cell opens Lesson 1 only. Students see a change when they next open or reload the app.
+
+You always see every lesson yourself, because the app recognises you as its owner.
 
 Students join on their first visit by entering their name and class code. The app gets their email address from their Google sign-in, and they appear in the **Students** tab. Anyone in your school's Google domain who has the link and a code can join, so only share codes with your class. You might change a code after the class has joined.
 

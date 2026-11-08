@@ -103,7 +103,7 @@ function load({ email = 'a@school.test', spreadsheetId = 'ID', lockFree = true }
   });
   if (spreadsheetId) {
     ctx.setupSheets();
-    sheets.Classes.appendRow(['Class A', ' Maple-42 ']);
+    sheets.Classes.appendRow(['Class A', ' Maple-42 ', 'all']);
     sheets.Classes.appendRow(['Class B', 7316]);
     sheets.Students.appendRow(['A@School.test ', 'Student A', 'Class A', '', '', '']);
     sheets.Students.appendRow(['b@school.test', 'Student B', 'Class B', '', '', '']);
@@ -348,7 +348,7 @@ test('running setup on an older Sheet adds the new tab and column and keeps its 
   sheets.Roster = { rows: oldRoster, getLastRow: () => 2 };
   sheets.Roster.getRange = () => { throw new Error('the old Roster tab must not be touched'); };
   ctx.setupSheets();
-  assert.strictEqual(JSON.stringify(sheets.Classes.rows), '[["Class","Code"]]');
+  assert.strictEqual(JSON.stringify(sheets.Classes.rows), '[["Class","Code","Lessons open"]]');
   assert.strictEqual(sheets.Students.rows[0][5], 'Blocked');
   assert.deepStrictEqual(sheets.Students.rows[1], ['a@school.test', 'Student A', 'Class A', 'mac', 'then']);
   assert.strictEqual(ctx.getBootstrap().status, 'ok');
@@ -819,4 +819,51 @@ test('the compress test folders really differ in how much they shrink', () => {
   };
   assert.ok(ratio('Notes') < 0.15, 'text shrinks to under 15%');
   assert.ok(ratio('Photos') > 0.5, 'photos barely shrink');
+});
+
+// Class A has every lesson open. Class B has a blank "Lessons open" cell.
+const openLessons = (out) => Array.from(out.course).filter((lesson) => !lesson.locked).map((lesson) => lesson.id);
+
+test('a blank Lessons open cell opens only the first lesson, and locked lessons hold no content', () => {
+  const { ctx } = load({ email: 'b@school.test' });
+  const out = ctx.getBootstrap();
+  assert.deepStrictEqual(openLessons(out), ['L1']);
+  const locked = out.course.filter((lesson) => lesson.locked);
+  assert.strictEqual(locked.length, 4);
+  locked.forEach((lesson) => {
+    assert.deepStrictEqual(Array.from(lesson.sections), []);
+    assert.ok(lesson.tab, 'its tab still shows');
+  });
+  assert.ok(!JSON.stringify(locked).includes('L5-SAVE-01'), 'no task IDs or content leak out');
+});
+
+test('the teacher sets how many lessons each class can open, as a number or "all"', () => {
+  const { ctx, sheets } = load({ email: 'b@school.test' });
+  sheets.Classes.rows[2][2] = 3;
+  assert.deepStrictEqual(openLessons(ctx.getBootstrap()), ['L1', 'L5', 'L4']);
+  sheets.Classes.rows[2][2] = ' ALL ';
+  assert.strictEqual(openLessons(ctx.getBootstrap()).length, 5);
+  sheets.Classes.rows[2][2] = 99;
+  assert.strictEqual(openLessons(ctx.getBootstrap()).length, 5);
+  sheets.Classes.rows[2][2] = 'soon';
+  assert.deepStrictEqual(openLessons(ctx.getBootstrap()), ['L1']);
+});
+
+test('a tick for a lesson that is not open yet is refused', () => {
+  const { ctx } = load({ email: 'b@school.test' });
+  assert.throws(() => ctx.setTask('L5-SAVE-01', true), /isn't open yet/);
+  assert.doesNotThrow(() => ctx.setTask('L1-APPS-01', true));
+});
+
+test('the teacher who owns the app always sees every lesson', () => {
+  const { ctx } = load({ email: 'b@school.test' });
+  ctx.Session.getEffectiveUser = () => ({ getEmail: () => 'B@School.test' });
+  assert.strictEqual(openLessons(ctx.getBootstrap()).length, 5);
+  assert.doesNotThrow(() => ctx.setTask('L3-QUIZ-01', true));
+});
+
+test('setup adds the Lessons open column to the Classes tab', () => {
+  const { ctx, sheets } = load();
+  ctx.setupSheets();
+  assert.strictEqual(sheets.Classes.rows[0][2], 'Lessons open');
 });
