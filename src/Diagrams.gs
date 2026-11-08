@@ -147,6 +147,63 @@ function extensionDiagram_() {
     + '</svg>';
 }
 
+function selectDiagram_(os) {
+  var pick = os === 'win' ? 'Ctrl' : 'Command';
+  var names = ['notes-art.txt', 'notes-history.txt', 'notes-maths.txt', 'notes-science.txt', 'photo-01.jpg'];
+  var panel = function (x, title, chosen, firstNote, lastNote) {
+    var s = label_(x, 24, title, 'heading') + box_(x, 36, 270, 190, 'sunk');
+    names.forEach(function (name, i) {
+      var y = 46 + i * 34;
+      if (chosen.indexOf(i) > -1) s += box_(x + 6, y, 258, 28, 'accent-soft');
+      s += fileIcon_(x + 14, y + 2) + label_(x + 44, y + 19, name);
+    });
+    s += label_(x, 248, firstNote, 'muted') + label_(x, 268, lastNote, 'muted');
+    return s;
+  };
+  return svgOpen_(620, 280)
+    + panel(20, 'A block of files', [0, 1, 2, 3], 'Click the first file,', 'then Shift + click the last.')
+    + panel(330, 'Files that aren\'t together', [1, 3], 'Hold ' + pick + ' and click', 'each file you want.')
+    + '</svg>';
+}
+
+function saveDialogDiagram_(os) {
+  var isWin = os === 'win';
+  var svg = svgOpen_(620, 250) + box_(10, 10, 600, 230);
+  svg += label_(26, 36, isWin ? 'Save As' : 'Save', 'heading');
+  if (isWin) {
+    svg += box_(26, 50, 568, 30, 'sunk') + label_(38, 70, 'Documents  ›  Year 9', 'text');
+    svg += callout_(586, 65, 1);
+    svg += box_(26, 90, 150, 100, 'sunk') + label_(42, 112, 'Desktop') + label_(42, 140, 'Documents') + label_(42, 168, 'Downloads');
+    svg += box_(190, 90, 404, 100, 'sunk') + folder_(206, 98) + label_(242, 118, 'Science') + fileIcon_(209, 140) + label_(242, 160, 'my-plan.txt');
+    svg += label_(26, 220, 'File name:', 'text') + box_(110, 202, 300, 28, 'accent-soft') + label_(122, 221, 'my-plan.txt');
+    svg += callout_(424, 216, 2);
+  } else {
+    svg += label_(26, 76, 'Save As:', 'text') + box_(100, 56, 300, 30, 'accent-soft') + label_(112, 76, 'my-plan.txt');
+    svg += box_(408, 58, 26, 26, 'sunk') + '<path d="M415 68 l6 6 l6 -6" class="d-tick"/>';
+    svg += callout_(452, 71, 2);
+    svg += label_(26, 122, 'Where:', 'text') + box_(100, 102, 300, 30, 'sunk') + folder_(110, 106) + label_(144, 122, 'Year 9');
+    svg += callout_(414, 117, 1);
+    svg += label_(26, 168, 'Only see Where? Click the arrow button next to the name to see all your folders.', 'muted');
+  }
+  svg += box_(494, 202, 100, 28, 'accent') + label_(544, 221, 'Save', 'on-accent', 'middle');
+  svg += callout_(586, 190, 3);
+  return svg + '</svg>';
+}
+
+function versionsDiagram_() {
+  var note = function (x, title, lines) {
+    var s = box_(x, 30, 230, 130, 'sunk') + fileIcon_(x + 14, 42) + label_(x + 44, 60, title, 'heading');
+    lines.forEach(function (line, i) { s += label_(x + 18, 96 + i * 24, line); });
+    return s;
+  };
+  return svgOpen_(620, 210)
+    + note(20, 'my-plan.txt', ['Goal 1', 'Goal 2'])
+    + arrow_(258, 95, 362, 95) + label_(310, 84, 'new version', 'muted', 'middle')
+    + note(370, 'my-plan-v2.txt', ['Goal 1', 'Goal 2', 'Goal 3 (new)'])
+    + label_(20, 190, 'Two separate files. Adding Goal 3 to the new version leaves the original as it was.', 'muted')
+    + '</svg>';
+}
+
 function storageDiagram_() {
   return svgOpen_(620, 180)
     + box_(20, 30, 230, 120, 'sunk') + label_(135, 56, 'Local', 'heading', 'middle')

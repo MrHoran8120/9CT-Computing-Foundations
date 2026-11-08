@@ -27,22 +27,31 @@ var DASHBOARD = {
   MUTED: '#55617a',
   PALE: '#f1f4fa',
   DONE: '#d7f0e0',
-  BARS: ['#1f5fd6', '#b4540a', '#0a7d6c', '#a8327a']
+  // Each lesson's colour in the app. A lesson without one uses the ink colour.
+  BARS: { L1: '#1f5fd6', L5: '#6b3fc4', L2: '#b4540a', L3: '#0a7d6c', L4: '#a8327a' }
 };
 
-/** Lists each lesson with the number of tasks that count towards progress. */
+/** Lists each lesson, numbered in the order students see it, with the tasks that count. */
 function lessonTotals_() {
-  return COURSE.map(function (lesson) {
+  return COURSE.map(function (lesson, i) {
     var total = 0;
     lesson.sections.forEach(function (section) {
       if (!section.extension) total += section.tasks.length;
     });
-    return { id: lesson.id, title: lesson.optional ? 'Lesson ' + lesson.id.slice(1) + ' (optional)' : 'Lesson ' + lesson.id.slice(1), total: total, optional: !!lesson.optional };
+    var title = 'Lesson ' + (i + 1) + (lesson.optional ? ' (optional)' : '');
+    return { id: lesson.id, title: title, total: total, optional: !!lesson.optional };
   });
 }
 
+/** 1 is A, 26 is Z, 27 is AA. */
 function columnLetter_(number) {
-  return String.fromCharCode(64 + number);
+  var letters = '';
+  while (number > 0) {
+    var rest = (number - 1) % 26;
+    letters = String.fromCharCode(65 + rest) + letters;
+    number = Math.floor((number - 1) / 26);
+  }
+  return letters;
 }
 
 /** The data tab holds each lesson's total in row 2, to the right of the sorted table. */
@@ -148,7 +157,7 @@ function dashboardRowFormulas_(index, lessons) {
     '=IF($B' + row + '="","",' + data(1) + ')'
   ];
   lessons.forEach(function (lesson, i) {
-    cells.push(bar(2 + i, DASHBOARD.BARS[i % DASHBOARD.BARS.length]));
+    cells.push(bar(2 + i, DASHBOARD.BARS[lesson.id] || DASHBOARD.INK));
   });
   return cells;
 }

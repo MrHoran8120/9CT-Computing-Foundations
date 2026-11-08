@@ -37,7 +37,7 @@ If you run short of time, finish the rescue challenge next lesson rather than ru
 - **The Mac move shortcut:** students copy first, then press Option + Command + V at the destination.
 - **Hidden extensions:** most computers hide extensions by default, so students turn them on in section 2, before their first download. Check that everyone has done this, because later steps rely on it. If a name becomes `sunset.jpg.jpg`, the student probably skipped it.
 - **Word files on a Mac:** if there's no app for `.docx`, students can select the file and press the space bar to preview it.
-- **Working inside the ZIP:** on Windows, opening a ZIP without extracting it looks like a normal folder, but changes don't stay. Check that the `Sams files` folder is in Documents › Year 9. Lesson 2 explains why.
+- **Working inside the ZIP:** on Windows, opening a ZIP without extracting it looks like a normal folder, but changes don't stay. Check that the `Sams files` folder is in Documents › Year 9. The ZIP lesson explains why.
 
 ## Answers
 

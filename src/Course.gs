@@ -4,6 +4,9 @@
  * Task IDs are permanent: saved progress depends on them. Change a label freely,
  * but never change or reuse an ID. To remove a task, delete it and leave its ID retired.
  *
+ * Lessons appear in the order listed here, which needn't match their IDs. unit groups lessons,
+ * ready for a course with many of them.
+ *
  * extension: true marks an extra challenge for fast finishers. It doesn't count towards
  * a lesson's progress. optional: true marks a lesson a teacher may choose not to run.
  */
@@ -11,6 +14,7 @@ var COURSE = [
   {
     id: 'L1',
     title: 'Computer fundamentals',
+    unit: 'Foundations',
     tab: 'Files',
     sections: [
       { title: 'Apps and files', tasks: [
@@ -63,8 +67,50 @@ var COURSE = [
     ]
   },
   {
+    // Added after the other lessons, so its ID is L5, but students see it second.
+    id: 'L5',
+    title: 'Taking control of your files',
+    unit: 'Foundations',
+    tab: 'Save and find',
+    sections: [
+      { title: 'Find your Lesson 1 work', tasks: [
+        { id: 'L5-RECALL-01', label: 'I found my Lesson 1 work without step-by-step help.' }
+      ] },
+      { title: 'Select several files', tasks: [
+        { id: 'L5-SELECT-01', label: 'I moved the three photos together, and only those files moved.' },
+        { id: 'L5-SELECT-02', label: 'I copied two files that weren\'t next to each other in one go.' }
+      ] },
+      { title: 'Save on purpose', tasks: [
+        { id: 'L5-SAVE-01', label: 'I saved a file in a folder I chose, closed it, and opened it again.' },
+        { id: 'L5-SAVE-02', label: 'I made a second version with a new name.' }
+      ] },
+      { title: 'Copies and versions', tasks: [
+        { id: 'L5-VERSION-01', label: 'I changed one version and checked that the other didn\'t change.' },
+        { id: 'L5-VERSION-02', label: 'I found the complete speech and can explain my evidence.' }
+      ] },
+      { title: 'Find missing work', tasks: [
+        { id: 'L5-FIND-01', label: 'I found the missing file using search.' },
+        { id: 'L5-FIND-02', label: 'I opened the folder where it is stored.' }
+      ] },
+      { title: 'Recovery challenge', tasks: [
+        { id: 'L5-RECOVER-01', label: 'I found the complete report, using what\'s inside it as evidence.' },
+        { id: 'L5-RECOVER-02', label: 'I organised the project into folders, moving the images together.' },
+        { id: 'L5-RECOVER-03', label: 'I kept the earlier reports in an archive folder.' },
+        { id: 'L5-RECOVER-04', label: 'I saved a revised report, closed it, and opened it again from its folder.' },
+        { id: 'L5-RECOVER-05', label: 'I checked my project against the checklist.' }
+      ] },
+      { title: 'Extra challenge: shortcuts', extension: true, tasks: [
+        { id: 'L5-EXTRA-01', label: 'I made a shortcut and worked out how it differs from the real file.' }
+      ] },
+      { title: 'Extra challenge: newest isn\'t always best', extension: true, tasks: [
+        { id: 'L5-EXTRA-02', label: 'I explained why the newest file isn\'t always the complete one.' }
+      ] }
+    ]
+  },
+  {
     id: 'L2',
     title: 'ZIP files and submission',
+    unit: 'Foundations',
     tab: 'ZIP and hand-in',
     sections: [
       { title: 'What a ZIP is', tasks: [
@@ -104,6 +150,7 @@ var COURSE = [
   {
     id: 'L3',
     title: 'AI and assessment',
+    unit: 'Foundations',
     tab: 'AI',
     sections: [
       { title: 'Why this matters', tasks: [
@@ -139,6 +186,7 @@ var COURSE = [
   {
     id: 'L4',
     title: 'Your coding toolkit',
+    unit: 'Foundations',
     tab: 'Toolkit (optional)',
     optional: true,
     sections: [
@@ -191,12 +239,13 @@ function allTaskIds_() {
  * which never changes. A section without content shows a "still being written" note.
  */
 function courseWithContent_() {
-  var content = { L1: lesson1Content_() };
+  var content = { L1: lesson1Content_(), L5: lesson5Content_() };
   return COURSE.map(function (lesson) {
     var lessonContent = content[lesson.id] || {};
     return {
       id: lesson.id,
       title: lesson.title,
+      unit: lesson.unit,
       tab: lesson.tab,
       optional: lesson.optional,
       sections: lesson.sections.map(function (section) {

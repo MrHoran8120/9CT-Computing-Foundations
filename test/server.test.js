@@ -89,7 +89,8 @@ function load({ email = 'a@school.test', spreadsheetId = 'ID', lockFree = true }
   vm.createContext(ctx);
   vm.runInContext(fs.readFileSync(path.join(src, 'Course.gs'), 'utf8'), ctx);
   vm.runInContext(fs.readFileSync(path.join(src, 'Code.gs'), 'utf8'), ctx);
-  ['Dashboard.gs', 'Diagrams.gs', 'Lesson1.gs', 'ExerciseFiles.gs'].forEach((file) => {
+  const lessonFiles = fs.readdirSync(src).filter((file) => /^Lesson\d+\.gs$/.test(file));
+  ['Dashboard.gs', 'Diagrams.gs', 'ExerciseFiles.gs', ...lessonFiles].forEach((file) => {
     vm.runInContext(fs.readFileSync(path.join(src, file), 'utf8'), ctx);
   });
   if (spreadsheetId) {
@@ -354,9 +355,9 @@ test('progress saved under a retired task ID is ignored', () => {
 test('every task ID is unique and follows the naming pattern', () => {
   const { ctx } = load();
   const ids = Array.from(ctx.allTaskIds_());
-  assert.strictEqual(ids.length, 60);
+  assert.strictEqual(ids.length, 76);
   assert.strictEqual(new Set(ids).size, ids.length);
-  ids.forEach((id) => assert.match(id, /^L[1-4]-[A-Z]+-\d{2}$/));
+  ids.forEach((id) => assert.match(id, /^L\d+-[A-Z]+-\d{2}$/));
 });
 
 test('each lesson has the expected core tasks and extra challenges', () => {
@@ -366,7 +367,7 @@ test('each lesson has the expected core tasks and extra challenges', () => {
     const core = sections.filter((s) => !s.extension);
     return [core.reduce((n, s) => n + s.tasks.length, 0), sections.length - core.length];
   });
-  assert.deepStrictEqual(counts, [[15, 6], [15, 1], [9, 1], [12, 1]]);
+  assert.deepStrictEqual(counts, [[15, 6], [14, 2], [15, 1], [9, 1], [12, 1]]);
 });
 
 test('extra challenges come after the core sections and are saved as extras', () => {
@@ -458,20 +459,20 @@ test('the Dashboard leaves out blocked students, extra challenges and optional l
   const { ctx, sheets } = load();
   ctx.setupSheets();
   const data = sheets['Dashboard data'].cells;
-  assert.match(data.K2, /D2:D=TRUE/);
+  assert.match(data.L2, /D2:D=TRUE/);
   assert.match(data.E2, /"L1-EXTRA-\*"/);
-  assert.match(data.I2, /E2:E\*\$S\$2\+F2:F\*\$T\$2\+G2:G\*\$U\$2/);
-  assert.ok(!/H2:H/.test(data.I2), 'Lesson 4 is optional');
+  assert.match(data.J2, /E2:E\*\$U\$2\+F2:F\*\$V\$2\+G2:G\*\$W\$2\+H2:H\*\$X\$2/);
+  assert.ok(!/I2:I/.test(data.J2), 'the optional lesson is left out');
 });
 
 test('the Dashboard can show every class, labelled and sorted by class', () => {
   const { ctx, sheets } = load();
   ctx.setupSheets();
   const data = sheets['Dashboard data'].cells;
-  assert.match(data.K2, /Dashboard!\$C\$4="All classes",C2:C<>""/);
-  assert.match(data.K2, /Dashboard!\$F\$4="Class",7/);
-  assert.match(data.X2, /^=\{"All classes";/);
-  assert.match(sheets.Dashboard.cells.C10, /\$C\$4="All classes".*!Q2/);
+  assert.match(data.L2, /Dashboard!\$C\$4="All classes",C2:C<>""/);
+  assert.match(data.L2, /Dashboard!\$F\$4="Class",8/);
+  assert.match(data.AA2, /^=\{"All classes";/);
+  assert.match(sheets.Dashboard.cells.C10, /\$C\$4="All classes".*!S2/);
   assert.match(sheets.Dashboard.cells.C9, /"Class"/);
   assert.ok(sheets.Dashboard.cells.B209, 'has 200 student rows');
   assert.strictEqual(sheets.Dashboard.cells.B210.includes('first 200'), true);
@@ -480,11 +481,11 @@ test('the Dashboard can show every class, labelled and sorted by class', () => {
 test('course changes correct the Dashboard totals when the next student loads the app', () => {
   const { ctx, sheets } = load();
   ctx.setupSheets();
-  const totals = () => Array.from(sheets['Dashboard data'].rows[1].slice(18, 22));
-  assert.deepStrictEqual(totals(), [15, 15, 9, 12]);
+  const totals = () => Array.from(sheets['Dashboard data'].rows[1].slice(20, 25));
+  assert.deepStrictEqual(totals(), [15, 14, 15, 9, 12]);
   ctx.COURSE[0].sections[0].tasks.push({ id: 'L1-APPS-99', label: 'New task' });
   ctx.getBootstrap();
-  assert.deepStrictEqual(totals(), [16, 15, 9, 12]);
+  assert.deepStrictEqual(totals(), [16, 14, 15, 9, 12]);
 });
 
 test('a Dashboard problem never stops a student loading the app', () => {
@@ -498,12 +499,30 @@ test('a Dashboard problem never stops a student loading the app', () => {
 const flat = (value) => JSON.parse(JSON.stringify(value));
 const lessonOne = (ctx) => flat(ctx.courseWithContent_())[0];
 
-test('every Lesson 1 section has content, and every first task ID matches one', () => {
+const written = (ctx) => flat(ctx.courseWithContent_()).filter((lesson) => ['L1', 'L5'].includes(lesson.id));
+
+test('every section of a written lesson has content, and every first task ID matches one', () => {
   const { ctx } = load();
-  const lesson = lessonOne(ctx);
-  lesson.sections.forEach((section) => assert.ok(section.content, section.title));
-  const known = lesson.sections.map((section) => section.tasks[0].id);
-  Object.keys(flat(ctx.lesson1Content_())).forEach((id) => assert.ok(known.includes(id), id));
+  [['L1', ctx.lesson1Content_()], ['L5', ctx.lesson5Content_()]].forEach(([id, content]) => {
+    const lesson = written(ctx).find((item) => item.id === id);
+    lesson.sections.forEach((section) => assert.ok(section.content, section.title));
+    const known = lesson.sections.map((section) => section.tasks[0].id);
+    Object.keys(flat(content)).forEach((key) => assert.ok(known.includes(key), key));
+  });
+});
+
+test('lessons are shown in course order, with the new files lesson second, and all in one unit', () => {
+  const { ctx } = load();
+  const lessons = flat(ctx.courseWithContent_());
+  assert.deepStrictEqual(lessons.map((lesson) => lesson.id), ['L1', 'L5', 'L2', 'L3', 'L4']);
+  lessons.forEach((lesson) => assert.strictEqual(lesson.unit, 'Foundations'));
+  assert.deepStrictEqual(Array.from(ctx.lessonTotals_()).map((lesson) => lesson.title),
+    ['Lesson 1', 'Lesson 2', 'Lesson 3', 'Lesson 4', 'Lesson 5 (optional)']);
+});
+
+test('Dashboard columns past Z get the right letters', () => {
+  const { ctx } = load();
+  assert.deepStrictEqual([1, 26, 27, 52, 53].map(ctx.columnLetter_), ['A', 'Z', 'AA', 'AZ', 'BA']);
 });
 
 test('students turn on file extensions before they first download or rename a file', () => {
@@ -528,7 +547,7 @@ test('lesson content is valid for both Windows and Mac', () => {
     }
   };
   const ids = new Set();
-  lessonOne(ctx).sections.forEach((section) => section.content.forEach((block) => {
+  written(ctx).forEach((lesson) => lesson.sections.forEach((section) => section.content.forEach((block) => {
     const where = section.title + ': ' + block.type;
     assert.ok(blockTypes.includes(block.type), where);
     if (block.only) assert.ok(['win', 'mac'].includes(block.only), where);
@@ -542,13 +561,14 @@ test('lesson content is valid for both Windows and Mac', () => {
     }
     if (block.type === 'match') block.items.forEach((item) => assert.ok(block.choices.includes(item.answer), item.text));
     if (block.id) { assert.ok(!ids.has(block.id), 'repeated id ' + block.id); ids.add(block.id); }
-  }));
+  })));
 });
 
 test('drawings are complete and hold no scripts', () => {
   const { ctx } = load();
   [ctx.appFileDiagram_(), ctx.olderWindowsExtensionsDiagram_(), ctx.windowDiagram_('win'), ctx.windowDiagram_('mac'), ctx.pathDiagram_('win'), ctx.pathDiagram_('mac'),
-    ctx.copyMoveDiagram_(), ctx.extensionDiagram_(), ctx.storageDiagram_()].forEach((svg) => {
+    ctx.copyMoveDiagram_(), ctx.extensionDiagram_(), ctx.storageDiagram_(), ctx.selectDiagram_('win'), ctx.selectDiagram_('mac'),
+    ctx.saveDialogDiagram_('win'), ctx.saveDialogDiagram_('mac'), ctx.versionsDiagram_()].forEach((svg) => {
     assert.match(svg, /^<svg .*<\/svg>$/s);
     assert.ok(!/<script|on[a-z]+=|href=/i.test(svg));
     assert.ok(!/undefined|NaN/.test(svg));
@@ -580,4 +600,70 @@ test('deployment settings run as the teacher, for the organisation only', () => 
   const manifest = JSON.parse(fs.readFileSync(path.join(src, 'appsscript.json'), 'utf8'));
   assert.strictEqual(manifest.webapp.executeAs, 'USER_DEPLOYING');
   assert.strictEqual(manifest.webapp.access, 'DOMAIN');
+});
+
+// Reads every file in a ZIP made by dev/build-exercise-files.js, which stores no data descriptors.
+function unzip(buffer) {
+  const zlib = require('zlib');
+  const files = {};
+  let at = buffer.indexOf(Buffer.from([0x50, 0x4b, 0x01, 0x02]));
+  while (at > -1 && buffer.readUInt32LE(at) === 0x02014b50) {
+    const nameLength = buffer.readUInt16LE(at + 28);
+    const name = buffer.toString('utf8', at + 46, at + 46 + nameLength);
+    const local = buffer.readUInt32LE(at + 42);
+    const start = local + 30 + buffer.readUInt16LE(local + 26) + buffer.readUInt16LE(local + 28);
+    const packed = buffer.subarray(start, start + buffer.readUInt32LE(at + 20));
+    files[name] = { date: buffer.readUInt16LE(at + 14), data: zlib.inflateRawSync(packed) };
+    at += 46 + nameLength + buffer.readUInt16LE(at + 30) + buffer.readUInt16LE(at + 32);
+  }
+  return files;
+}
+
+const fileFrom = (ctx, zipName) => unzip(Buffer.from(ctx.EXERCISE_FILES[zipName].data, 'base64'));
+const picked = (blocks, id) => { const block = blocks.find((item) => item.id === id); return block.options[block.answer]; };
+
+test('the speech answer is the only complete version, and the newest one is not it', () => {
+  const { ctx } = load();
+  const files = fileFrom(ctx, 'practice-files.zip');
+  const speeches = Object.keys(files).filter((name) => /speech/.test(name));
+  const complete = speeches.filter((name) => {
+    const text = files[name].data.toString();
+    return /Third,/.test(text) && /Thank you/.test(text);
+  });
+  assert.deepStrictEqual(complete, ['Practice files/speech-final.txt']);
+  const newest = speeches.sort((a, b) => files[b].date - files[a].date)[0];
+  assert.notStrictEqual(newest, complete[0]);
+  const blocks = flat(ctx.lesson5Content_())['L5-VERSION-01'];
+  assert.strictEqual(picked(blocks, 'speech'), '`speech-final.txt`');
+});
+
+test('the practice files suit the selection and search steps', () => {
+  const { ctx } = load();
+  const names = Object.keys(fileFrom(ctx, 'practice-files.zip')).map((name) => name.replace('Practice files/', ''));
+  const top = names.filter((name) => !name.includes('/')).sort();
+  const photos = top.filter((name) => /^photo-/.test(name));
+  assert.strictEqual(photos.length, 3);
+  assert.strictEqual(top.indexOf(photos[2]) - top.indexOf(photos[0]), 2, 'the photos sit together when sorted by name');
+  const notes = top.filter((name) => /^notes-/.test(name));
+  assert.deepStrictEqual(notes, ['notes-art.txt', 'notes-history.txt', 'notes-maths.txt', 'notes-science.txt']);
+  assert.deepStrictEqual(names.filter((name) => /excursion/.test(name)), ['old stuff/2026/misc/excursion-form.pdf']);
+  const blocks = flat(ctx.lesson5Content_())['L5-FIND-01'];
+  assert.strictEqual(picked(blocks, 'where'), 'Practice files › old stuff › 2026 › misc');
+});
+
+test('only one garden report has all five parts, and it is not the newest', () => {
+  const { ctx } = load();
+  const files = fileFrom(ctx, 'garden-project.zip');
+  const reports = Object.keys(files).filter((name) => /report.*\.txt$/.test(name));
+  assert.strictEqual(reports.length, 3);
+  const complete = reports.filter((name) => {
+    const text = files[name].data.toString();
+    return ['Aim', 'Method', 'Week 4', 'Conclusion'].every((part) => text.includes(part));
+  });
+  assert.deepStrictEqual(complete, ['Garden project/Copy of garden report.txt']);
+  const newest = reports.sort((a, b) => files[b].date - files[a].date)[0];
+  assert.strictEqual(newest, 'Garden project/garden report FINAL.txt');
+  assert.strictEqual(Object.keys(files).filter((name) => /\.png$/.test(name)).length, 2, 'two images to move together');
+  const blocks = flat(ctx.lesson5Content_())['L5-RECOVER-01'];
+  assert.strictEqual(picked(blocks, 'garden'), '`Copy of garden report.txt`');
 });

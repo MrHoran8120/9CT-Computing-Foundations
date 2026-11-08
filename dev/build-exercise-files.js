@@ -107,6 +107,39 @@ function pdf(lines) {
 
 const text = (lines) => Buffer.from(lines.join('\r\n') + '\r\n');
 
+// A small PNG drawn from rectangles, for charts and plans. No text, so it needs no fonts.
+function png(width, height, background, rects) {
+  const pixels = Buffer.alloc((width * 3 + 1) * height);
+  const paint = (x0, y0, w, h, [r, g, b]) => {
+    for (let y = Math.max(0, y0); y < Math.min(height, y0 + h); y++) {
+      for (let x = Math.max(0, x0); x < Math.min(width, x0 + w); x++) {
+        const at = y * (width * 3 + 1) + 1 + x * 3;
+        pixels[at] = r; pixels[at + 1] = g; pixels[at + 2] = b;
+      }
+    }
+  };
+  paint(0, 0, width, height, background);
+  rects.forEach(([x, y, w, h, colour]) => paint(x, y, w, h, colour));
+  const chunk = (type, data) => {
+    const length = Buffer.alloc(4);
+    length.writeUInt32BE(data.length);
+    const body = Buffer.concat([Buffer.from(type, 'ascii'), data]);
+    const crc = Buffer.alloc(4);
+    crc.writeUInt32BE(crc32(body));
+    return Buffer.concat([length, body, crc]);
+  };
+  const header = Buffer.alloc(13);
+  header.writeUInt32BE(width, 0);
+  header.writeUInt32BE(height, 4);
+  header[8] = 8; header[9] = 2;
+  return Buffer.concat([
+    Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
+    chunk('IHDR', header),
+    chunk('IDAT', zlib.deflateSync(pixels, { level: 9 })),
+    chunk('IEND', Buffer.alloc(0))
+  ]);
+}
+
 // Sam's 15 messy files. Most names give nothing away, so students have to open them.
 const samsFiles = {
   'assignment final FINAL v2.docx': docx(['English assignment: Book review', 'Final version', 'This book is about a teenager who starts to question the rules of their town.', 'I would recommend it because the ending made me think for days.']),
@@ -155,10 +188,118 @@ fs.writeFileSync(path.join(lessonOne, 'test-file.txt'), testFile);
 fs.writeFileSync(path.join(lessonOne, 'photo.jpg'), photo);
 fs.writeFileSync(path.join(lessonOne, 'sams-files.zip'), samsZip);
 
+// "Taking control of your files" (lesson ID L5). Practice files for selecting, comparing
+// versions and searching. The speech versions are judged by what's inside them: the newest
+// one is missing its ending, so the date alone gives the wrong answer.
+const practiceFiles = {
+  'notes-art.txt': { data: text(['Art notes', 'Warm colours: red, orange and yellow.', 'Cool colours: blue, green and purple.']), date: '2026-04-20' },
+  'notes-history.txt': { data: text(['History notes', 'The First Fleet arrived in 1788.']), date: '2026-04-21' },
+  'notes-maths.txt': { data: text(['Maths notes', 'A right angle is 90 degrees.']), date: '2026-04-22' },
+  'notes-science.txt': { data: text(['Science notes', 'Plants need light, water and air to grow.']), date: '2026-04-23' },
+  'photo-01.jpg': { data: image('photo.jpg'), date: '2026-04-11' },
+  'photo-02.jpg': { data: image('IMG_2042.jpg'), date: '2026-04-12' },
+  'photo-03.jpg': { data: image('IMG_2041.jpg'), date: '2026-04-13' },
+  'poster.png': { data: image('logo-new.png'), date: '2026-04-15' },
+  'speech.txt': { data: text([
+    'Why our school needs a bike rack',
+    'First, more students would ride to school, which is good for their health.',
+    'Second, bikes left against the fence get damaged.',
+    'Thank you for listening.'
+  ]), date: '2026-05-04' },
+  'speech-final.txt': { data: text([
+    'Why our school needs a bike rack',
+    'First, more students would ride to school, which is good for their health.',
+    'Second, bikes left against the fence get damaged.',
+    'Third, fewer cars at drop-off would make the street safer.',
+    'Thank you for listening.'
+  ]), date: '2026-05-06' },
+  'speech-final-v2.txt': { data: text([
+    'Why our school needs a bike rack',
+    'First, more students would ride to school, which is good for their health.',
+    'Second, bikes left against the fence get damaged.',
+    'Third, fewer cars at drop-off would make the street safer.'
+  ]), date: '2026-05-08' },
+  'old stuff/2025/timetable-2025.pdf': { data: pdf(['Year 8 timetable', 'Monday: Maths, English, Science']), date: '2025-02-03' },
+  'old stuff/2026/games/high-scores.txt': { data: text(['High scores', 'Level 1: 3,200', 'Level 2: 4,750']), date: '2026-03-01' },
+  'old stuff/2026/misc/excursion-form.pdf': { data: pdf(['Excursion permission form', 'Year 9 Science excursion to the botanic garden', 'Please sign and return by Friday.']), date: '2026-05-12' }
+};
+
+// The recovery challenge. Only "Copy of garden report.txt" has every part the task sheet asks
+// for. "garden report FINAL.txt" is newer but has no week 4 results or conclusion.
+const GREEN = [46, 125, 50];
+const BROWN = [141, 110, 99];
+const GREY = [97, 97, 97];
+const growthChart = png(320, 200, [255, 255, 255], [
+  [30, 20, 2, 160, GREY], [30, 178, 280, 2, GREY],
+  ...[4, 9, 15, 22].map((h, i) => [50 + i * 66, 178 - h * 7, 24, h * 7, GREEN]),
+  ...[3, 6, 9, 12].map((h, i) => [76 + i * 66, 178 - h * 7, 24, h * 7, BROWN])
+]);
+const gardenPlan = png(320, 200, [214, 194, 160], [
+  [20, 20, 130, 70, GREEN], [170, 20, 130, 70, GREEN],
+  [20, 110, 130, 70, BROWN], [170, 110, 130, 70, BROWN],
+  [150, 0, 20, 200, [189, 189, 189]]
+]);
+const reportStart = [
+  'School garden report',
+  '',
+  'Aim',
+  'To find out whether vegetable seedlings grow taller in the sunny bed or the shady bed.',
+  '',
+  'Method',
+  'We planted 10 bean seedlings in each bed and measured their average height every Friday for four weeks.'
+];
+const gardenFiles = {
+  'task-sheet.pdf': { data: pdf([
+    'Science task: School garden report',
+    'Your report must include all five parts:',
+    '1. A title',
+    '2. Aim',
+    '3. Method',
+    '4. Results for all four weeks, for both beds',
+    '5. Conclusion',
+    'Keep the growth chart and garden plan with your report.'
+  ]), date: '2026-02-23' },
+  'garden report.txt': { data: text(reportStart), date: '2026-03-02' },
+  'Copy of garden report.txt': { data: text([...reportStart,
+    '',
+    'Results (average height in cm)',
+    'Week 1: sunny 4, shady 3',
+    'Week 2: sunny 9, shady 6',
+    'Week 3: sunny 15, shady 9',
+    'Week 4: sunny 22, shady 12',
+    '',
+    'Conclusion',
+    'The seedlings in the sunny bed grew almost twice as tall as those in the shady bed, so sunlight helped them grow.'
+  ]), date: '2026-03-16' },
+  'garden report FINAL.txt': { data: text([...reportStart,
+    '',
+    'Results (average height in cm)',
+    'Week 1: sunny 4, shady 3',
+    'Week 2: sunny 9, shady 6',
+    'Week 3: sunny 15, shady 9'
+  ]), date: '2026-03-19' },
+  'measurements.csv': { data: text(['Week,Sunny bed (cm),Shady bed (cm)', '1,4,3', '2,9,6', '3,15,9', '4,22,12']), date: '2026-03-13' },
+  'IMG_5101.png': { data: growthChart, date: '2026-03-14' },
+  'IMG_5102.png': { data: gardenPlan, date: '2026-02-25' },
+  'sources.txt': { data: text(['Sources', 'School garden club notes, Term 1.', 'Seed packet: Bush bean, planting guide.']), date: '2026-03-10' },
+  'netball-training.pdf': { data: pdf(['Netball training', 'Tuesday and Thursday, 3:30 pm', 'Bring water and a hat.']), date: '2026-03-05' }
+};
+
+const zipFolder = (folder, files) => zip(Object.keys(files).map((name) => ({ name: `${folder}/${name}`, data: files[name].data, date: files[name].date })));
+const practiceZip = zipFolder('Practice files', practiceFiles);
+const gardenZip = zipFolder('Garden project', gardenFiles);
+
+const saveAndFind = path.join(ROOT, 'exercise-files', 'save-and-find');
+fs.mkdirSync(saveAndFind, { recursive: true });
+fs.writeFileSync(path.join(saveAndFind, 'practice-files.zip'), practiceZip);
+fs.writeFileSync(path.join(saveAndFind, 'garden-project.zip'), gardenZip);
+
 const served = {
   'test-file.txt': { mime: 'text/plain', data: testFile },
   'photo.jpg': { mime: 'image/jpeg', data: photo },
-  'sams-files.zip': { mime: 'application/zip', data: samsZip }
+  'sams-files.zip': { mime: 'application/zip', data: samsZip },
+  'practice-files.zip': { mime: 'application/zip', data: practiceZip },
+  'garden-project.zip': { mime: 'application/zip', data: gardenZip }
 };
 
 const entries = Object.keys(served).map((name) => `  '${name}': { mime: '${served[name].mime}', data: '${served[name].data.toString('base64')}' }`);

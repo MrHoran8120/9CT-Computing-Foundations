@@ -12,7 +12,8 @@ const read = (name) => fs.readFileSync(path.join(src, name), 'utf8');
 
 const sandbox = {};
 vm.createContext(sandbox);
-['Course.gs', 'Diagrams.gs', 'Lesson1.gs', 'ExerciseFiles.gs'].forEach((name) => vm.runInContext(read(name), sandbox));
+const lessonFiles = fs.readdirSync(src).filter((name) => /^Lesson\d+\.gs$/.test(name));
+['Course.gs', 'Diagrams.gs', 'ExerciseFiles.gs', ...lessonFiles].forEach((name) => vm.runInContext(read(name), sandbox));
 const course = JSON.stringify(vm.runInContext('courseWithContent_()', sandbox));
 const files = JSON.stringify(sandbox.EXERCISE_FILES);
 

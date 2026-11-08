@@ -158,7 +158,7 @@ function lesson1Content_() {
         { win: 'Go to **Downloads**, right-click `sams-files.zip`, then click **Extract All**.', mac: 'Go to **Downloads** and double-click `sams-files.zip`.' },
         { win: 'Click **Extract**. A new window should open with a folder called `Sams files`.', mac: 'A new folder should appear with the name `Sams files`.' },
         'Move the `Sams files` folder into **Documents › Year 9**.',
-        'Open the folder and check that you can see all 15 files. ZIP files are explained next lesson.'
+        'Open the folder and check that you can see all 15 files. ZIP files are explained in a later lesson.'
       ] },
       { type: 'download', file: 'sams-files.zip', label: 'Download sams-files.zip' },
       { type: 'steps', title: 'Rescue them', steps: [

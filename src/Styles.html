@@ -1,7 +1,7 @@
 <style>
   :root {
     --bg: #eef2f8; --surface: #ffffff; --sunk: #f6f8fc; --ink: #16213a; --muted: #55617a; --line: #d5dce9;
-    --l1: #1f5fd6; --l2: #b4540a; --l3: #0a7d6c; --l4: #a8327a; --on: #ffffff;
+    --l1: #1f5fd6; --l2: #b4540a; --l3: #0a7d6c; --l4: #a8327a; --l5: #6b3fc4; --on: #ffffff;
     --ok: #157a3f; --bad: #b3261e;
     --display: "Bricolage Grotesque", "Trebuchet MS", sans-serif;
     --body: "Atkinson Hyperlegible", "Segoe UI", Arial, sans-serif;
@@ -9,7 +9,7 @@
   @media (prefers-color-scheme: dark) {
     :root {
       --bg: #0f141d; --surface: #182130; --sunk: #121926; --ink: #e8edf6; --muted: #a3afc5; --line: #2e3a4f;
-      --l1: #86aeff; --l2: #f2a764; --l3: #55d3bf; --l4: #f08cc8; --on: #0c1320;
+      --l1: #86aeff; --l2: #f2a764; --l3: #55d3bf; --l4: #f08cc8; --l5: #b9a0ff; --on: #0c1320;
       --ok: #5fd08f; --bad: #ff8f86;
       color-scheme: dark;
     }
@@ -20,8 +20,8 @@
   p { margin: 0; max-width: 68ch; }
   button { font: inherit; color: inherit; cursor: pointer; }
   :focus-visible { outline: 3px solid var(--l1); outline-offset: 2px; border-radius: 4px; }
-  .L1 { --acc: var(--l1); } .L2 { --acc: var(--l2); } .L3 { --acc: var(--l3); } .L4 { --acc: var(--l4); }
-  .L1, .L2, .L3, .L4 { --soft: color-mix(in srgb, var(--acc) 13%, var(--surface)); }
+  .L1 { --acc: var(--l1); } .L2 { --acc: var(--l2); } .L3 { --acc: var(--l3); } .L4 { --acc: var(--l4); } .L5 { --acc: var(--l5); }
+  .L1, .L2, .L3, .L4, .L5 { --soft: color-mix(in srgb, var(--acc) 13%, var(--surface)); }
 
   .message { padding: 32px 16px; max-width: 60ch; margin: 0 auto; display: grid; gap: 10px; }
 
