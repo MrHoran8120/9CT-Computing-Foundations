@@ -16,22 +16,30 @@ function chainable(target) {
   return proxy;
 }
 
+// Column letters as Sheets writes them: 1 is A, 27 is AA.
+const letter = (n) => { let out = ''; while (n > 0) { out = String.fromCharCode(65 + ((n - 1) % 26)) + out; n = Math.floor((n - 1) / 26); } return out; };
+
 function fakeSheet(name, sheets) {
   const base = {
     name,
     rows: [],
     cells: {},
+    maxColumns: 27,
+    getMaxColumns: () => base.maxColumns,
+    insertColumnsAfter: (after, count) => { base.maxColumns += count; },
     getLastRow: () => base.rows.length,
     appendRow: (row) => { base.rows.push(row.slice()); },
-    clear: () => { base.cells = {}; },
+    clear: () => { base.cells = {}; base.rows = []; },
     getRange: (row, col, numRows, numCols) => {
-      const key = typeof row === 'string' ? row : String.fromCharCode(64 + col) + row;
+      const key = typeof row === 'string' ? row : letter(col) + row;
+      const firstColumn = typeof row === 'string' ? row.match(/^[A-Z]+/)[0].split('').reduce((n, ch) => n * 26 + ch.charCodeAt(0) - 64, 0) : col;
+      if (firstColumn + (numCols || 1) - 1 > base.maxColumns) throw new Error(name + ': writing past the last column, ' + key);
       const range = chainable({
         getValue: () => base.cells[key],
         setValue: (value) => { base.cells[key] = value; return range; },
         setFormula: (value) => { base.cells[key] = value; return range; },
         setFormulas: (values) => {
-          values.forEach((v, i) => v.forEach((cell, c) => { base.cells[String.fromCharCode(64 + col + c) + (row + i)] = cell; }));
+          values.forEach((v, i) => v.forEach((cell, c) => { base.cells[letter(col + c) + (row + i)] = cell; }));
           return range;
         },
         getValues: () => base.rows.slice(row - 1, row - 1 + numRows)
@@ -473,11 +481,69 @@ test('the Dashboard can show every class, labelled and sorted by class', () => {
   const data = sheets['Dashboard data'].cells;
   assert.match(data.L2, /Dashboard!\$C\$4="All classes",C2:C<>""/);
   assert.match(data.L2, /Dashboard!\$F\$4="Class",8/);
+  assert.match(data.AU2, /Dashboard!\$F\$4="Class",14/, 'the lesson table sorts by class too');
   assert.match(data.AA2, /^=\{"All classes";/);
-  assert.match(sheets.Dashboard.cells.C10, /\$C\$4="All classes".*!S2/);
+  assert.match(sheets.Dashboard.cells.C11, /\$C\$4="All classes".*!S2,.*!BH2\)/);
   assert.match(sheets.Dashboard.cells.C9, /"Class"/);
-  assert.ok(sheets.Dashboard.cells.B209, 'has 200 student rows');
-  assert.strictEqual(sheets.Dashboard.cells.B210.includes('first 200'), true);
+  assert.ok(sheets.Dashboard.cells.B210, 'has 200 student rows');
+  assert.strictEqual(sheets.Dashboard.cells.B211.includes('first 200'), true);
+});
+
+test('Show switches the Dashboard between the whole course and one lesson', () => {
+  const { ctx, sheets } = load();
+  ctx.setupSheets();
+  const data = sheets['Dashboard data'];
+  const dash = sheets.Dashboard.cells;
+  assert.strictEqual(dash.I4, 'All lessons');
+  assert.match(data.cells.AC2, /MATCH\(Dashboard!\$I\$4,\$AD\$2:\$AD\$7,0\)-1/);
+  const column = (n) => data.rows.map((row) => row[n - 1]);
+  assert.deepStrictEqual(column(30).slice(1, 7), ['All lessons', '1. Files', '2. Save and find', '3. VS Code', '4. ZIP and hand-in', '5. AI']);
+  assert.strictEqual(column(31)[3], '#6b3fc4', 'each choice carries its lesson colour');
+  assert.strictEqual(data.rows[2][61], 'Find your Lesson 1 work', 'section titles, one row per lesson');
+  assert.match(dash.F9, /=0,IFERROR\(INDEX/, 'course headings come from the Show choices');
+  assert.match(dash.F10, /"Whole class"|COUNTIF/);
+  assert.match(dash.B10, /"Whole class"/);
+  assert.match(dash.P9, /"Extras"/);
+  assert.match(dash.P11, /REPT\("★"/);
+  assert.match(dash.D6, /"Finished this lesson"/);
+  assert.match(dash.F7, /'Dashboard data'!\$AC\$3/);
+});
+
+test('each lesson-view column counts the right section\'s tasks in every lesson', () => {
+  const { ctx, sheets } = load();
+  ctx.setupSheets();
+  const data = sheets['Dashboard data'].cells;
+  ['L1-APPS-01', 'L5-RECALL-01', 'L4-TOOLS-01', 'L2-ZIP-01', 'L3-WHY-01'].forEach((id) => assert.ok(data.AH2.includes('"' + id + '"'), id));
+  ['L1-NAV-01', 'L1-EXT-01', 'L1-NAV-02'].forEach((id) => assert.ok(data.AI2.includes('"' + id + '"'), id));
+  assert.match(data.AI2, /\)\/3\)/, 'section 2 of Lesson 1 has three tasks');
+  assert.ok(!/EXTRA/.test(data.AH2 + data.AI2), 'extra challenges are counted separately');
+  assert.match(data.AR2, /"L5-EXTRA-\*"/);
+  assert.match(data.AQ2, /""\)\)\)$/, 'a lesson without a tenth section shows nothing there');
+  // In real Sheets, MIN and MAX inside ARRAYFORMULA work over the whole column, not row by row.
+  Object.keys(data).filter((cell) => /ARRAYFORMULA/.test(data[cell])).forEach((cell) => {
+    assert.ok(!/\b(MIN|MAX)\((?!1,\$)/.test(data[cell].replace(/MAX\(1,\$[A-Z]+\$2\)/g, '')), cell + ' has no column-wide MIN or MAX');
+  });
+});
+
+test('changing a lesson updates the lesson view when the next student loads the app', () => {
+  const { ctx, sheets } = load();
+  ctx.setupSheets();
+  ctx.COURSE[0].sections[1].title = 'Find your way';
+  ctx.COURSE[0].sections[1].tasks.push({ id: 'L1-NAV-99', label: 'New task' });
+  ctx.getBootstrap();
+  const data = sheets['Dashboard data'];
+  assert.strictEqual(data.rows[1][62], 'Find your way');
+  assert.ok(data.cells.AI2.includes('"L1-NAV-99"'));
+  assert.match(data.cells.AI2, /\)\/4\)/);
+});
+
+test('adding a whole lesson waits for setupSheets, because the Dashboard itself changes', () => {
+  const { ctx, sheets } = load();
+  ctx.setupSheets();
+  const before = sheets['Dashboard data'].cells.AH2;
+  ctx.COURSE.push({ id: 'L6', title: 'New', unit: 'Foundations', tab: 'New', sections: [{ title: 'Start', tasks: [{ id: 'L6-START-01', label: 'x' }] }] });
+  ctx.getBootstrap();
+  assert.strictEqual(sheets['Dashboard data'].cells.AH2, before);
 });
 
 test('course changes correct the Dashboard totals when the next student loads the app', () => {
@@ -519,7 +585,7 @@ test('lessons are shown in course order, not ID order, and all in one unit', () 
   assert.deepStrictEqual(lessons.map((lesson) => lesson.id), ['L1', 'L5', 'L4', 'L2', 'L3']);
   lessons.forEach((lesson) => assert.strictEqual(lesson.unit, 'Foundations'));
   assert.deepStrictEqual(Array.from(ctx.lessonTotals_()).map((lesson) => lesson.title),
-    ['Lesson 1', 'Lesson 2', 'Lesson 3', 'Lesson 4', 'Lesson 5']);
+    ['1. Files', '2. Save and find', '3. VS Code', '4. ZIP and hand-in', '5. AI']);
 });
 
 test('Dashboard columns past Z get the right letters', () => {
@@ -691,4 +757,20 @@ test('the VS Code lesson turns off AI features with the documented setting', () 
   const { ctx } = load();
   const text = JSON.stringify(flat(ctx.lesson4Content_())['L4-AI-01']);
   assert.match(text, /chat\.disableAIFeatures/);
+});
+
+test('setup widens the Dashboard tabs before writing, so no formula references shift', () => {
+  const { ctx, sheets } = load();
+  ctx.setupSheets();
+  assert.ok(sheets['Dashboard data'].getMaxColumns() >= 71);
+  assert.match(sheets['Dashboard data'].cells.AC2, /\$AD\$2:\$AD\$7/);
+});
+
+test('the Dashboard headings are formulas that show plain words', () => {
+  const { ctx, sheets } = load();
+  ctx.setupSheets();
+  assert.strictEqual(sheets.Dashboard.cells.B9, '="Student"');
+  Object.entries(sheets.Dashboard.cells).filter(([cell]) => /^[B-Z]+(9|10)$/.test(cell)).forEach(([cell, value]) => {
+    assert.ok(value === '' || String(value).startsWith('='), cell + ' is written as a formula');
+  });
 });

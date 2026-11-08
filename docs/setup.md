@@ -134,12 +134,18 @@ Ask someone to do this with a real student account. If you only have your own ac
 
 The **Dashboard** tab of your Sheet shows a class's progress with bars, and updates by itself as students tick tasks.
 
-1. Choose a class, or **All classes**, and how to sort it at the top of the tab. Sorting by **Name** avoids ranking students in front of the class, and sorting by **Class** keeps each class together.
-2. Click **View**, then **Full screen**, so only the Dashboard is on show.
+1. At the top of the tab, choose a class, or **All classes**.
+2. In **Show**, choose the lesson you're teaching, or **All lessons** for the whole course.
+3. Choose how to sort it. Sorting by **Name** avoids ranking students in front of the class, and sorting by **Class** keeps each class together.
+4. Click **View**, then **Full screen**, so only the Dashboard is on show.
 
-It shows first names and last initials only. Other tabs in the Sheet hold student emails, so stay on the Dashboard while it's on the board. Blocked students and extra challenges aren't included, and any lesson marked as optional in `Course.gs` doesn't count towards **Overall**.
+**One lesson** shows a column for each section, green when a student has finished it. The **Whole class** row shows what share of the class has finished each section, so you can see where students are stuck. **Most are up to** names the section most students are working on, and **Extras** shows a star for each extra challenge done.
 
-You don't need to update the Dashboard when you change the course. It corrects its totals the next time a student opens the app. Only adding or removing a whole lesson needs **setupSheets** to run again.
+**All lessons** shows each student's overall progress, with a bar for each lesson.
+
+It shows first names and last initials only. Other tabs in the Sheet hold student emails, so stay on the Dashboard while it's on the board. Blocked students aren't included, extra challenges don't count towards progress, and any lesson marked as optional in `Course.gs` doesn't count towards **Overall**.
+
+You don't need to update the Dashboard when you change a lesson. It catches up the next time a student opens the app. Only adding or removing a whole lesson, or giving a lesson more than 10 sections, needs **setupSheets** to run again.
 
 ## Starting a new year
 
